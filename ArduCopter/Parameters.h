@@ -680,6 +680,18 @@ public:
     AC_WeatherVane weathervane;
 #endif
 
+    // PIXEL_LOCK mode parameters
+    AP_Float pixel_lock_vel_gain;
+    AP_Float pixel_lock_max_vel;
+    AP_Float pixel_lock_max_climb;
+    AP_Float pixel_lock_deadband;
+    AP_Float pixel_lock_target_size;
+    AP_Float pixel_lock_size_deadband;
+    AP_Int16 pixel_lock_timeout;
+    AP_Float pixel_lock_close_dist;     // Distance threshold for close-range mode (meters)
+    AP_Float pixel_lock_close_gain;     // Velocity gain for close-range (lower = gentler)
+    AP_Float pixel_lock_close_max_vel;  // Max velocity for close-range (lower to prevent overshoot)
+
     // payload place parameters
     AP_Float pldp_thrust_placed_fraction;
     AP_Float pldp_range_finder_maximum_m;

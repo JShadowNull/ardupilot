@@ -677,6 +677,14 @@ void GCS_MAVLINK_Copter::handle_landing_target(const mavlink_landing_target_t &p
 #if AC_PRECLAND_ENABLED
     copter.precland.handle_msg(packet, timestamp_ms);
 #endif
+
+    // Update pixel_tracker for PIXEL_LOCK mode
+    // LANDING_TARGET message provides angular errors in radians
+    copter.pixel_tracker.angle_error_x = packet.angle_x;  // radians
+    copter.pixel_tracker.angle_error_y = packet.angle_y;  // radians
+    copter.pixel_tracker.target_size_y = packet.size_y;   // radians
+    copter.pixel_tracker.visible = (packet.position_valid == 0);  // 0 = visible
+    copter.pixel_tracker.last_update_ms = timestamp_ms;
 }
 
 MAV_RESULT GCS_MAVLINK_Copter::_handle_command_preflight_calibration(const mavlink_command_int_t &packet, const mavlink_message_t &msg)

@@ -223,6 +223,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModePixelLock;
 
     friend class _AutoTakeoff;
 
@@ -326,6 +327,15 @@ private:
         uint32_t start_ms;  // system time high vibration were last detected
         uint32_t clear_ms;  // system time high vibrations stopped
     } vibration_check;
+
+    // Pixel tracking data from companion computer (for PIXEL_LOCK mode)
+    struct {
+        float angle_error_x;     // Angular error X (radians, from LANDING_TARGET)
+        float angle_error_y;     // Angular error Y (radians, from LANDING_TARGET)
+        float target_size_y;     // Target angular size Y (radians, from LANDING_TARGET)
+        bool visible;            // Target visibility
+        uint32_t last_update_ms; // Last message timestamp
+    } pixel_tracker;
 
     // EKF variances are unfiltered and are designed to recover very quickly when possible
     // thus failsafes should be triggered on filtered values in order to avoid transient errors 
@@ -1072,6 +1082,7 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModePixelLock mode_pixel_lock;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

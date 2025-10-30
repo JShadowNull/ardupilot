@@ -179,6 +179,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
+        case Mode::Number::PIXEL_LOCK:
+            return &mode_pixel_lock;
+
         default:
             break;
     }

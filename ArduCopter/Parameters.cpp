@@ -1232,6 +1232,84 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     // @User: Advanced
     AP_GROUPINFO("FS_EKF_FILT", 8, ParametersG2, fs_ekf_filt_hz, FS_EKF_FILT_DEFAULT),
 
+    // @Param: PLCK_VEL_GAIN
+    // @DisplayName: PIXEL_LOCK velocity gain
+    // @Description: Proportional gain for converting distance error to velocity. Higher = more aggressive tracking. Uses position controller's existing PID tuning (PSC_VELXY_*).
+    // @Range: 0.5 5.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_VEL_GAIN", 9, ParametersG2, pixel_lock_vel_gain, 2.0),
+
+    // @Param: PLCK_MAX_VEL
+    // @DisplayName: PIXEL_LOCK maximum velocity
+    // @Description: Maximum horizontal velocity limit. Set high for aggressive tracking. Uses position controller for actual control (PSC_VELXY_*).
+    // @Units: m/s
+    // @Range: 3.0 15.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_MAX_VEL", 10, ParametersG2, pixel_lock_max_vel, 10.0),
+
+    // @Param: PLCK_MAX_CLIMB
+    // @DisplayName: PIXEL_LOCK maximum climb rate
+    // @Description: Maximum climb/descent rate for altitude adjustments. Uses position controller for actual control (PSC_POSZ_*).
+    // @Units: m/s
+    // @Range: 1.0 5.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_MAX_CLIMB", 11, ParametersG2, pixel_lock_max_climb, 3.0),
+
+    // @Param: PLCK_DEADBAND
+    // @DisplayName: PIXEL_LOCK centering deadband
+    // @Description: Angular deadband for centering target (acceptable error zone before commanding movement).
+    // @Units: deg
+    // @Range: 0.5 5.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_DEADBAND", 12, ParametersG2, pixel_lock_deadband, 2.0),
+
+    // @Param: PLCK_TGT_SIZE
+    // @DisplayName: PIXEL_LOCK target size
+    // @Description: Desired angular size of target in camera view (controls standoff distance)
+    // @Units: deg
+    // @Range: 5.0 45.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_TGT_SIZE", 13, ParametersG2, pixel_lock_target_size, 20.0),
+
+    // @Param: PLCK_SIZE_DB
+    // @DisplayName: PIXEL_LOCK size deadband
+    // @Description: Angular deadband for target size control (acceptable size variation)
+    // @Units: deg
+    // @Range: 0.5 5.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_SIZE_DB", 14, ParametersG2, pixel_lock_size_deadband, 2.0),
+
+    // @Param: PLCK_TIMEOUT
+    // @DisplayName: PIXEL_LOCK vision timeout
+    // @Description: Time in milliseconds after which vision data is considered stale
+    // @Units: ms
+    // @Range: 100 2000
+    // @User: Standard
+    AP_GROUPINFO("PLCK_TIMEOUT", 15, ParametersG2, pixel_lock_timeout, 500),
+
+    // @Param: PLCK_CLOSE_DIST
+    // @DisplayName: PIXEL_LOCK close-range distance
+    // @Description: Distance threshold for switching to precision mode. Below this distance, drone uses gentler gains to prevent overshoot.
+    // @Units: m
+    // @Range: 5.0 30.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CLOSE_DIST", 16, ParametersG2, pixel_lock_close_dist, 15.0),
+
+    // @Param: PLCK_CLOSE_GAIN
+    // @DisplayName: PIXEL_LOCK close-range velocity gain
+    // @Description: Velocity gain for close-range precision tracking. Lower than PLCK_VEL_GAIN to prevent overshoot near target.
+    // @Range: 0.2 2.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CLOSE_GAIN", 17, ParametersG2, pixel_lock_close_gain, 0.5),
+
+    // @Param: PLCK_CLOSE_VEL
+    // @DisplayName: PIXEL_LOCK close-range max velocity
+    // @Description: Maximum velocity for close-range precision tracking. Lower than PLCK_MAX_VEL to prevent overshoot.
+    // @Units: m/s
+    // @Range: 1.0 5.0
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CLOSE_VEL", 18, ParametersG2, pixel_lock_close_max_vel, 3.0),
+
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
     AP_GROUPEND
