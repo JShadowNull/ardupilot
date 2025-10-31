@@ -329,12 +329,13 @@ private:
     } vibration_check;
 
     // Pixel tracking data from companion computer (for PIXEL_LOCK mode)
+    // ViSP IBVS velocity control - all visual servoing computed on companion
     struct {
-        float angle_error_x;     // Angular error X (radians, from LANDING_TARGET)
-        float angle_error_y;     // Angular error Y (radians, from LANDING_TARGET)
-        float target_size_y;     // Target angular size Y (radians, from LANDING_TARGET)
-        bool visible;            // Target visibility
-        uint32_t last_update_ms; // Last message timestamp
+        // ViSP velocity commands (from SET_POSITION_TARGET_LOCAL_NED)
+        bool use_velocity_control;  // True if using external velocity commands (ViSP IBVS)
+        Vector3f velocity_ned_cms;   // Commanded velocity in NED frame (cm/s)
+        float yaw_rate_rads;         // Commanded yaw rate (rad/s)
+        uint32_t velocity_update_ms; // Last velocity command timestamp
     } pixel_tracker;
 
     // EKF variances are unfiltered and are designed to recover very quickly when possible

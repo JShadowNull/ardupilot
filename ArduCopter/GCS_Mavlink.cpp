@@ -678,13 +678,8 @@ void GCS_MAVLINK_Copter::handle_landing_target(const mavlink_landing_target_t &p
     copter.precland.handle_msg(packet, timestamp_ms);
 #endif
 
-    // Update pixel_tracker for PIXEL_LOCK mode
-    // LANDING_TARGET message provides angular errors in radians
-    copter.pixel_tracker.angle_error_x = packet.angle_x;  // radians
-    copter.pixel_tracker.angle_error_y = packet.angle_y;  // radians
-    copter.pixel_tracker.target_size_y = packet.size_y;   // radians
-    copter.pixel_tracker.visible = (packet.position_valid == 0);  // 0 = visible
-    copter.pixel_tracker.last_update_ms = timestamp_ms;
+    // Note: PIXEL_LOCK mode now uses ViSP velocity control via SET_POSITION_TARGET_LOCAL_NED
+    // LANDING_TARGET messages are only used by precision landing (AC_PRECLAND)
 }
 
 MAV_RESULT GCS_MAVLINK_Copter::_handle_command_preflight_calibration(const mavlink_command_int_t &packet, const mavlink_message_t &msg)
@@ -1291,8 +1286,11 @@ void GCS_MAVLINK_Copter::handle_message_set_position_target_local_ned(const mavl
         mavlink_set_position_target_local_ned_t packet;
         mavlink_msg_set_position_target_local_ned_decode(&msg, &packet);
 
-        // exit if vehicle is not in Guided mode or Auto-Guided mode
-        if (!copter.flightmode->in_guided_mode()) {
+        // Check if in PIXEL_LOCK mode (for ViSP velocity control)
+        bool in_pixel_lock_mode = (copter.flightmode->mode_number() == Mode::Number::PIXEL_LOCK);
+
+        // exit if vehicle is not in Guided mode, Auto-Guided mode, or PIXEL_LOCK mode
+        if (!copter.flightmode->in_guided_mode() && !in_pixel_lock_mode) {
             return;
         }
 
@@ -1376,7 +1374,22 @@ void GCS_MAVLINK_Copter::handle_message_set_position_target_local_ned(const mavl
             yaw_rate_cds = ToDeg(packet.yaw_rate) * 100.0f;
         }
 
-        // send request
+        // Handle PIXEL_LOCK mode separately (ViSP velocity control)
+        if (in_pixel_lock_mode) {
+            // PIXEL_LOCK mode: Store velocity commands for ViSP IBVS control
+            // Only accept velocity-only commands (pos_ignore=true, vel_ignore=false)
+            if (pos_ignore && !vel_ignore && acc_ignore) {
+                // Valid velocity command for PIXEL_LOCK mode
+                copter.pixel_tracker.use_velocity_control = true;
+                copter.pixel_tracker.velocity_ned_cms = vel_vector;  // Already in cm/s and NED frame
+                copter.pixel_tracker.yaw_rate_rads = radians(yaw_rate_cds * 0.01f);  // Convert from centidegrees/s to rad/s
+                copter.pixel_tracker.velocity_update_ms = AP_HAL::millis();
+            }
+            // Invalid commands are silently ignored, mode will hover in place
+            return;
+        }
+
+        // send request (GUIDED mode only)
         if (!pos_ignore && !vel_ignore) {
             copter.mode_guided.set_destination_posvelaccel(pos_vector, vel_vector, accel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
         } else if (pos_ignore && !vel_ignore) {

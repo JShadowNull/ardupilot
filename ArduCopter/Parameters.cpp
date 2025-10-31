@@ -1232,83 +1232,127 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     // @User: Advanced
     AP_GROUPINFO("FS_EKF_FILT", 8, ParametersG2, fs_ekf_filt_hz, FS_EKF_FILT_DEFAULT),
 
-    // @Param: PLCK_VEL_GAIN
-    // @DisplayName: PIXEL_LOCK velocity gain
-    // @Description: Proportional gain for converting distance error to velocity. Higher = more aggressive tracking. Uses position controller's existing PID tuning (PSC_VELXY_*).
-    // @Range: 0.5 5.0
+    // @Param: PLCK_VEL_TMOUT
+    // @DisplayName: PIXEL_LOCK velocity command timeout
+    // @Description: Time in milliseconds after which velocity commands from companion computer are considered stale. Drone hovers in place if timeout occurs. ViSP IBVS mode only.
+    // @Units: ms
+    // @Range: 100 1000
+    // @Increment: 10
     // @User: Standard
-    AP_GROUPINFO("PLCK_VEL_GAIN", 9, ParametersG2, pixel_lock_vel_gain, 2.0),
+    AP_GROUPINFO("PLCK_VEL_TMOUT", 9, ParametersG2, pixel_lock_vel_timeout, 200),
 
-    // @Param: PLCK_MAX_VEL
-    // @DisplayName: PIXEL_LOCK maximum velocity
-    // @Description: Maximum horizontal velocity limit. Set high for aggressive tracking. Uses position controller for actual control (PSC_VELXY_*).
-    // @Units: m/s
-    // @Range: 3.0 15.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_MAX_VEL", 10, ParametersG2, pixel_lock_max_vel, 10.0),
-
-    // @Param: PLCK_MAX_CLIMB
-    // @DisplayName: PIXEL_LOCK maximum climb rate
-    // @Description: Maximum climb/descent rate for altitude adjustments. Uses position controller for actual control (PSC_POSZ_*).
-    // @Units: m/s
-    // @Range: 1.0 5.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_MAX_CLIMB", 11, ParametersG2, pixel_lock_max_climb, 3.0),
-
-    // @Param: PLCK_DEADBAND
-    // @DisplayName: PIXEL_LOCK centering deadband
-    // @Description: Angular deadband for centering target (acceptable error zone before commanding movement).
+    // @Param: PLCK_CAM_HFOV
+    // @DisplayName: Camera Horizontal FOV
+    // @Description: Camera horizontal field of view in degrees
+    // @Range: 30 180
     // @Units: deg
-    // @Range: 0.5 5.0
+    // @Increment: 0.1
     // @User: Standard
-    AP_GROUPINFO("PLCK_DEADBAND", 12, ParametersG2, pixel_lock_deadband, 2.0),
+    AP_GROUPINFO("PLCK_CAM_HFOV", 10, ParametersG2, plck_cam_hfov, 62.2),
+
+    // @Param: PLCK_CAM_VFOV
+    // @DisplayName: Camera Vertical FOV
+    // @Description: Camera vertical field of view in degrees
+    // @Range: 20 120
+    // @Units: deg
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CAM_VFOV", 11, ParametersG2, plck_cam_vfov, 48.8),
+
+    // @Param: PLCK_DET_CONF
+    // @DisplayName: Detection Confidence
+    // @Description: Minimum confidence threshold for object detection (0.0-1.0)
+    // @Range: 0.1 1.0
+    // @Increment: 0.05
+    // @User: Standard
+    AP_GROUPINFO("PLCK_DET_CONF", 12, ParametersG2, plck_det_conf, 0.5),
+
+    // @Param: PLCK_TRIG_CH
+    // @DisplayName: Trigger Channel
+    // @Description: RC channel to enable/disable tracking
+    // @Range: 1 16
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_TRIG_CH", 13, ParametersG2, plck_trig_ch, 8),
+
+    // @Param: PLCK_TRIG_PWM
+    // @DisplayName: Trigger PWM Threshold
+    // @Description: PWM threshold in microseconds for trigger activation
+    // @Range: 1000 2000
+    // @Units: PWM
+    // @Increment: 10
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_TRIG_PWM", 14, ParametersG2, plck_trig_pwm, 1500),
+
+    // @Param: PLCK_RATE
+    // @DisplayName: Command Rate
+    // @Description: Velocity command message rate in Hz
+    // @Range: 10 50
+    // @Units: Hz
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_RATE", 15, ParametersG2, plck_rate, 20.0),
+
+    // @Param: PLCK_GAIN
+    // @DisplayName: Control Gain
+    // @Description: Control gain for visual servo loop
+    // @Range: 0.01 2.0
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_GAIN", 16, ParametersG2, plck_gain, 0.5),
 
     // @Param: PLCK_TGT_SIZE
-    // @DisplayName: PIXEL_LOCK target size
-    // @Description: Desired angular size of target in camera view (controls standoff distance)
-    // @Units: deg
-    // @Range: 5.0 45.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_TGT_SIZE", 13, ParametersG2, pixel_lock_target_size, 20.0),
-
-    // @Param: PLCK_SIZE_DB
-    // @DisplayName: PIXEL_LOCK size deadband
-    // @Description: Angular deadband for target size control (acceptable size variation)
-    // @Units: deg
-    // @Range: 0.5 5.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_SIZE_DB", 14, ParametersG2, pixel_lock_size_deadband, 2.0),
-
-    // @Param: PLCK_TIMEOUT
-    // @DisplayName: PIXEL_LOCK vision timeout
-    // @Description: Time in milliseconds after which vision data is considered stale
-    // @Units: ms
-    // @Range: 100 2000
-    // @User: Standard
-    AP_GROUPINFO("PLCK_TIMEOUT", 15, ParametersG2, pixel_lock_timeout, 500),
-
-    // @Param: PLCK_CLOSE_DIST
-    // @DisplayName: PIXEL_LOCK close-range distance
-    // @Description: Distance threshold for switching to precision mode. Below this distance, drone uses gentler gains to prevent overshoot.
+    // @DisplayName: Target Size
+    // @Description: Expected target size in meters (height for people)
+    // @Range: 0.1 5.0
     // @Units: m
-    // @Range: 5.0 30.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_CLOSE_DIST", 16, ParametersG2, pixel_lock_close_dist, 15.0),
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_TGT_SIZE", 17, ParametersG2, plck_tgt_size, 1.7),
 
-    // @Param: PLCK_CLOSE_GAIN
-    // @DisplayName: PIXEL_LOCK close-range velocity gain
-    // @Description: Velocity gain for close-range precision tracking. Lower than PLCK_VEL_GAIN to prevent overshoot near target.
-    // @Range: 0.2 2.0
-    // @User: Standard
-    AP_GROUPINFO("PLCK_CLOSE_GAIN", 17, ParametersG2, pixel_lock_close_gain, 0.5),
+    // @Param: PLCK_DIST
+    // @DisplayName: Desired Distance
+    // @Description: Desired standoff distance from target in meters
+    // @Range: 0.5 20.0
+    // @Units: m
+    // @Increment: 0.5
+    // @User: Advanced
+    AP_GROUPINFO("PLCK_DIST", 18, ParametersG2, plck_dist, 3.0),
 
-    // @Param: PLCK_CLOSE_VEL
-    // @DisplayName: PIXEL_LOCK close-range max velocity
-    // @Description: Maximum velocity for close-range precision tracking. Lower than PLCK_MAX_VEL to prevent overshoot.
-    // @Units: m/s
-    // @Range: 1.0 5.0
+    // @Param: PLCK_CAM_PITCH
+    // @DisplayName: Camera Pitch Offset
+    // @Description: Camera pitch angle offset from vehicle body frame (positive = tilted up). Used to transform body frame velocity commands to account for camera orientation.
+    // @Range: -90 90
+    // @Units: deg
+    // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("PLCK_CLOSE_VEL", 18, ParametersG2, pixel_lock_close_max_vel, 3.0),
+    AP_GROUPINFO("PLCK_CAM_PITCH", 19, ParametersG2, plck_cam_pitch, 0.0),
+
+    // @Param: PLCK_CAM_ROLL
+    // @DisplayName: Camera Roll Offset
+    // @Description: Camera roll angle offset from vehicle body frame (positive = rolled right). Used to transform body frame velocity commands to account for camera orientation.
+    // @Range: -90 90
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CAM_ROLL", 20, ParametersG2, plck_cam_roll, 0.0),
+
+    // @Param: PLCK_CAM_YAW
+    // @DisplayName: Camera Yaw Offset
+    // @Description: Camera yaw angle offset from vehicle body frame (positive = rotated right/clockwise). Used to transform body frame velocity commands to account for camera orientation.
+    // @Range: -180 180
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("PLCK_CAM_YAW", 21, ParametersG2, plck_cam_yaw, 0.0),
+
+    // @Param: PLCK_DEADBAND
+    // @DisplayName: Pixel Tracking Deadband
+    // @Description: Pixel error deadband in pixels. Velocity commands are zeroed when pixel error is within this threshold to prevent jitter.
+    // @Range: 0 50
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("PLCK_DEADBAND", 22, ParametersG2, plck_deadband, 5.0),
 
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 

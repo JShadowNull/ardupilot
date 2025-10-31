@@ -25,7 +25,7 @@ public:
     // The increment will prevent old parameters from being used incorrectly
     // by newer code.
     //
-    static const uint16_t        k_format_version = 120;
+    static const uint16_t        k_format_version = 121;
 
     // Parameter identities.
     //
@@ -680,17 +680,29 @@ public:
     AC_WeatherVane weathervane;
 #endif
 
-    // PIXEL_LOCK mode parameters
-    AP_Float pixel_lock_vel_gain;
-    AP_Float pixel_lock_max_vel;
-    AP_Float pixel_lock_max_climb;
-    AP_Float pixel_lock_deadband;
-    AP_Float pixel_lock_target_size;
-    AP_Float pixel_lock_size_deadband;
-    AP_Int16 pixel_lock_timeout;
-    AP_Float pixel_lock_close_dist;     // Distance threshold for close-range mode (meters)
-    AP_Float pixel_lock_close_gain;     // Velocity gain for close-range (lower = gentler)
-    AP_Float pixel_lock_close_max_vel;  // Max velocity for close-range (lower to prevent overshoot)
+    // PIXEL_LOCK mode parameters - ViSP IBVS velocity control
+    AP_Int16 pixel_lock_vel_timeout;       // Velocity command timeout (milliseconds)
+    // Note: All visual servoing (Jacobian, control law) computed on companion computer
+    // ArduPilot executes velocity commands via position controller
+
+    // Companion computer PIXEL_LOCK parameters - Camera & Vision
+    AP_Float plck_cam_hfov;                // Camera horizontal field of view (degrees)
+    AP_Float plck_cam_vfov;                // Camera vertical field of view (degrees)
+    AP_Float plck_det_conf;                // Detection confidence threshold (0.0-1.0)
+
+    // Companion computer PIXEL_LOCK parameters - Controller
+    AP_Int16 plck_trig_ch;                 // RC trigger channel
+    AP_Int16 plck_trig_pwm;                // Trigger PWM threshold (microseconds)
+    AP_Float plck_rate;                    // Command rate (Hz)
+    AP_Float plck_gain;                    // Control gain
+    AP_Float plck_tgt_size;                // Target size (meters)
+    AP_Float plck_dist;                    // Desired standoff distance (meters)
+
+    // Companion computer PIXEL_LOCK parameters - Camera Mounting
+    AP_Float plck_cam_pitch;               // Camera pitch offset (degrees, + = up)
+    AP_Float plck_cam_roll;                // Camera roll offset (degrees, + = right)
+    AP_Float plck_cam_yaw;                 // Camera yaw offset (degrees, + = CW)
+    AP_Float plck_deadband;                // Pixel error deadband (pixels)
 
     // payload place parameters
     AP_Float pldp_thrust_placed_fraction;
