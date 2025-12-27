@@ -498,7 +498,7 @@ void AP_VideoTX::announce_vtx_settings() const
 }
 
 // change the video power based on switch input
-// 3W VTX firmware: position 0 = pitmode, positions 1-5 = 3000mW
+// 3W VTX firmware: position 0 = pitmode on (anytime), positions 1-5 = pitmode off (anytime)
 void AP_VideoTX::change_power(int8_t position)
 {
     if (!_enabled || position < 0 || position > 5) {
@@ -508,10 +508,8 @@ void AP_VideoTX::change_power(int8_t position)
     // 3W VTX: Position 0 = pitmode on, positions 1-5 = pitmode off
     // Power stays at VTX_POWER parameter (default 3000mW)
     if (position == 0) {
-        // Position 0: Enable pitmode (only when disarmed)
-        if (!hal.util->get_soft_armed()) {
-            set_configured_options(get_configured_options() | uint8_t(VideoOptions::VTX_PITMODE));
-        }
+        // Position 0: Enable pitmode (allowed anytime, matching positions 1-5 behavior)
+        set_configured_options(get_configured_options() | uint8_t(VideoOptions::VTX_PITMODE));
     } else {
         // Positions 1-5: Disable pitmode
         if (has_option(VideoOptions::VTX_PITMODE)) {
