@@ -161,8 +161,4 @@ define HAL_DEFAULT_INS_FAST_SAMPLE 1
 # Motor order implies Betaflight/X for standard ESCs
 define HAL_FRAME_TYPE_DEFAULT 12
 
-# Explicitly enable VideoTX support for 3W VTX
-define AP_VIDEOTX_ENABLED 1
-define AP_SMARTAUDIO_ENABLED 1
-
 include ../include/minimize_fpv_osd.inc

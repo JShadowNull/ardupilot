@@ -36,7 +36,7 @@ const AP_Param::GroupInfo AP_VideoTX::var_info[] = {
 
     // @Param: POWER
     // @DisplayName: Video Transmitter Power Level
-    // @Description: Video Transmitter Power Level. Different VTXs support different power levels, the power level chosen will be rounded down to the nearest supported power level
+    // @Description: Video Transmitter Power Level. This firmware does NOT control VTX power - the VTX uses its own internal power setting. This parameter is ignored.
     // @Range: 1 3000
     AP_GROUPINFO("POWER",    2, AP_VideoTX, _power_mw, 0),
 
@@ -73,7 +73,7 @@ const AP_Param::GroupInfo AP_VideoTX::var_info[] = {
     // @DisplayName: Video Transmitter Max Power Level
     // @Description: Video Transmitter Maximum Power Level. Different VTXs support different power levels, this prevents the power aux switch from requesting too high a power level. The switch supports 6 power levels and the selected power will be a subdivision between 0 and this setting. WARNING: Ensure compliance with local regulations before using power levels above 25mW.
     // @Range: 25 3000
-    AP_GROUPINFO("MAX_POWER", 7, AP_VideoTX, _max_power_mw, 800),
+    AP_GROUPINFO("MAX_POWER", 7, AP_VideoTX, _max_power_mw, 3000),
 
     AP_GROUPEND
 };
@@ -118,11 +118,11 @@ AP_VideoTX::PowerLevel AP_VideoTX::_power_levels[VTX_MAX_POWER_LEVELS] = {
     { 0x12, 600,  28, 0xFF }, // Tramp lies above power levels and always returns 25/100/200/400/600
     { 3,    800,  29, 40   },
     { 0x13, 1000, 30, 0xFF }, // only in SA 2.1
-    { 0x14, 1200, 31, 0xFF }, // only in SA 2.1
-    { 0x15, 1600, 32, 0xFF }, // only in SA 2.1
-    { 0x16, 2000, 33, 0xFF }, // only in SA 2.1
-    { 0x17, 2500, 34, 0xFF }, // only in SA 2.1
-    { 0x18, 3000, 35, 0xFF }, // only in SA 2.1
+    { 0x14, 1200, 31, 0xFF, PowerActive::Active }, // only in SA 2.1 - 3W VTX support
+    { 0x15, 1600, 32, 0xFF, PowerActive::Active }, // only in SA 2.1 - 3W VTX support
+    { 0x16, 2000, 33, 0xFF, PowerActive::Active }, // only in SA 2.1 - 3W VTX support
+    { 0x17, 2500, 34, 0xFF, PowerActive::Active }, // only in SA 2.1 - 3W VTX support
+    { 0x18, 3000, 35, 0xFF, PowerActive::Active }, // only in SA 2.1 - 3W VTX support
     { 0xFF, 0,    0,  0XFF, PowerActive::Inactive }  // slot reserved for a custom power level
 };
 
@@ -397,17 +397,8 @@ bool AP_VideoTX::update_options() const
 }
 
 bool AP_VideoTX::update_power() const {
-    if (!_defaults_set || _power_mw == get_power_mw() || get_pitmode()) {
-        return false;
-    }
-    // check that the requested power is actually allowed
-    for (uint8_t i = 0; i < VTX_MAX_POWER_LEVELS; i++) {
-        if (_power_mw == _power_levels[i].mw
-            && _power_levels[i].active != PowerActive::Inactive) {
-            return true;
-        }
-    }
-    // asked for something unsupported - only SA2.1 allows this and will have already provided a list
+    // 3W VTX firmware: Disable power control - VTX uses its own internal power setting
+    // Only pitmode is controlled via RC toggle
     return false;
 }
 
@@ -507,43 +498,25 @@ void AP_VideoTX::announce_vtx_settings() const
 }
 
 // change the video power based on switch input
-// 6-pos range is in the middle of the available range
+// 3W VTX firmware: position 0 = pitmode, positions 1-5 = 3000mW
 void AP_VideoTX::change_power(int8_t position)
 {
     if (!_enabled || position < 0 || position > 5) {
         return;
     }
-    // first find out how many possible levels there are
-    uint8_t num_active_levels = 0;
-    for (uint8_t i = 0; i < VTX_MAX_POWER_LEVELS; i++) {
-        if (_power_levels[i].active != PowerActive::Inactive && _power_levels[i].mw <= _max_power_mw) {
-            num_active_levels++;
-        }
-    }
-    // iterate through to find the level
-    uint16_t level = constrain_int16(roundf((num_active_levels * (position + 1)/ 6.0f) - 1), 0, num_active_levels - 1);
-    debug("looking for pos %d power level %d from %d", position, level, num_active_levels);
-    uint16_t power = 0;
-    for (uint8_t i = 0, j = 0; i < num_active_levels; i++, j++) {
-        while (j < VTX_MAX_POWER_LEVELS-1 && _power_levels[j].active == PowerActive::Inactive) {
-            j++;
-        }
-        if (i == level) {
-            power = _power_levels[j].mw;
-            debug("selected power %dmw", power);
-            break;
-        }
-    }
 
-    if (power == 0) {
-        if (!hal.util->get_soft_armed()) {    // don't allow pitmode to be entered if already armed
+    // 3W VTX: Position 0 = pitmode on, positions 1-5 = pitmode off
+    // Power stays at VTX_POWER parameter (default 3000mW)
+    if (position == 0) {
+        // Position 0: Enable pitmode (only when disarmed)
+        if (!hal.util->get_soft_armed()) {
             set_configured_options(get_configured_options() | uint8_t(VideoOptions::VTX_PITMODE));
         }
     } else {
+        // Positions 1-5: Disable pitmode
         if (has_option(VideoOptions::VTX_PITMODE)) {
             set_configured_options(get_configured_options() & ~uint8_t(VideoOptions::VTX_PITMODE));
         }
-        set_configured_power_mw(power);
     }
 }
 
