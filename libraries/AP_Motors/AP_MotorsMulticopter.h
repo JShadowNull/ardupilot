@@ -22,7 +22,7 @@
 #define AP_MOTORS_SAFE_TIME_DEFAULT     1.0f    // Time for the esc when transitioning between zero pwm to minimum
 
 // spool definition
-#define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
+#define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.05f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
 
 /// @class      AP_MotorsMulticopter
 class AP_MotorsMulticopter : public AP_Motors {
