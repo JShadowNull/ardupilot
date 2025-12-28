@@ -24,12 +24,6 @@ bool ModeAuto::init(bool ignore_checks)
 {
     auto_RTL = false;
 
-    // If no mission, switch to Guided mode instead
-    if (mission.num_commands() <= 1) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Auto: No mission, switching to Guided");
-        return set_mode(Mode::Number::GUIDED, ModeReason::MISSION_END);
-    }
-
     if (mission.num_commands() > 1 || ignore_checks) {
         // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
         if (motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
@@ -91,6 +85,13 @@ void ModeAuto::exit()
 //      should be called at 100hz or more
 void ModeAuto::run()
 {
+    // If no mission, switch to Guided mode
+    if (mission.num_commands() <= 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto: No mission, switching to Guided");
+        set_mode(Mode::Number::GUIDED, ModeReason::MISSION_END);
+        return;
+    }
+
     // start or update mission
     if (waiting_to_start) {
         // don't start the mission until we have an origin
