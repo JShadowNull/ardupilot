@@ -24,48 +24,44 @@ bool ModeAuto::init(bool ignore_checks)
 {
     auto_RTL = false;
 
-    if (mission.num_commands() > 1 || ignore_checks) {
-        // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
-        if (motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
-            return false;
-        }
-
-        _mode = SubMode::LOITER;
-
-        // stop ROI from carrying over from previous runs of the mission
-        // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
-        if (auto_yaw.mode() == AutoYaw::Mode::ROI) {
-            auto_yaw.set_mode(AutoYaw::Mode::HOLD);
-        }
-
-        // initialise waypoint and spline controller
-        wp_nav->wp_and_spline_init();
-
-        // initialise desired speed overrides
-        desired_speed_override = {0, 0, 0};
-
-        // set flag to start mission
-        waiting_to_start = true;
-
-        // initialise mission change check (ignore results)
-        IGNORE_RETURN(mis_change_detector.check_for_mission_change());
-
-        // clear guided limits
-        copter.mode_guided.limit_clear();
-
-        // reset flag indicating if pilot has applied roll or pitch inputs during landing
-        copter.ap.land_repo_active = false;
-
-#if AC_PRECLAND_ENABLED
-        // initialise precland state machine
-        copter.precland_statemachine.init();
-#endif
-
-        return true;
-    } else {
+    // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
+    if (mission.num_commands() > 1 && motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
         return false;
     }
+
+    _mode = SubMode::LOITER;
+
+    // stop ROI from carrying over from previous runs of the mission
+    // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
+    if (auto_yaw.mode() == AutoYaw::Mode::ROI) {
+        auto_yaw.set_mode(AutoYaw::Mode::HOLD);
+    }
+
+    // initialise waypoint and spline controller
+    wp_nav->wp_and_spline_init();
+
+    // initialise desired speed overrides
+    desired_speed_override = {0, 0, 0};
+
+    // set flag to start mission
+    waiting_to_start = true;
+
+    // initialise mission change check (ignore results)
+    IGNORE_RETURN(mis_change_detector.check_for_mission_change());
+
+    // clear guided limits
+    copter.mode_guided.limit_clear();
+
+    // reset flag indicating if pilot has applied roll or pitch inputs during landing
+    copter.ap.land_repo_active = false;
+
+#if AC_PRECLAND_ENABLED
+    // initialise precland state machine
+    copter.precland_statemachine.init();
+#endif
+
+    return true;
 }
 
 // stop mission when we leave auto mode
