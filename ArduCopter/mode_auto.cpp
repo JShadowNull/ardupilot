@@ -23,16 +23,16 @@
 bool ModeAuto::init(bool ignore_checks)
 {
     auto_RTL = false;
-    const bool has_mission = mission.num_commands() > 1;
-    if (has_mission || ignore_checks) {
-        // Only reject if armed on ground with no mission (prevents takeoff with no mission)
-        if (!has_mission && !ignore_checks && motors->armed() && copter.ap.land_complete) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: No mission uploaded");
-            return false;
-        }
 
+    // If no mission, switch to Guided mode instead
+    if (mission.num_commands() <= 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto: No mission, switching to Guided");
+        return set_mode(Mode::Number::GUIDED, ModeReason::MISSION_END);
+    }
+
+    if (mission.num_commands() > 1 || ignore_checks) {
         // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
-        if (has_mission && motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
+        if (motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
             gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
             return false;
         }
@@ -96,11 +96,8 @@ void ModeAuto::run()
         // don't start the mission until we have an origin
         Location loc;
         if (copter.ahrs.get_origin(loc)) {
-            // Only start mission if one exists
-            if (mission.num_commands() > 1) {
-                // start/resume the mission (based on MIS_RESTART parameter)
-                mission.start_or_resume();
-            }
+            // start/resume the mission (based on MIS_RESTART parameter)
+            mission.start_or_resume();
             waiting_to_start = false;
 
             // initialise mission change check (ignore results)
@@ -821,6 +818,14 @@ void ModeAuto::exit_mission()
 {
     // play a tone
     AP_Notify::events.mission_complete = 1;
+
+    // Clear mission on completion (do this before mode changes or disarm)
+    if (!mission.clear()) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Auto: Failed to clear mission");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto: Mission cleared");
+    }
+
     // if we are not on the ground switch to loiter or land
     if (!copter.ap.land_complete) {
         // try to enter loiter but if that fails land
@@ -831,9 +836,6 @@ void ModeAuto::exit_mission()
         // if we've landed it's safe to disarm
         copter.arming.disarm(AP_Arming::Method::MISSIONEXIT);
     }
-
-    // Clear mission on completion
-    mission.clear();
 }
 
 // do_guided - start guided mode
