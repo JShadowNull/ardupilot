@@ -5,6 +5,7 @@
 #include <AP_Common/AP_Common.h>
 #include "RC_Channel.h"
 #include <AP_Proximity/AP_Proximity.h>
+#include <AP_PWMLight/AP_PWMLight.h>
 
 #if MODE_FOLLOW_ENABLED
  # include <AP_Follow/AP_Follow.h>
@@ -685,6 +686,9 @@ public:
     AP_Float pldp_range_finder_maximum_m;
     AP_Float pldp_delay_s;
     AP_Float pldp_descent_speed_ms;
+
+    // PWM light driver
+    AP_PWMLight pwm_light;
 };
 
 extern const AP_Param::Info        var_info[];

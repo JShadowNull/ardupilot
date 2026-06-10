@@ -462,6 +462,7 @@ AP_HW_Accton_Godwit_GA1        7120
 
 # OpenDroneID enabled boards. Use 10000 + the base board ID
 AP_HW_CubeOrange_ODID               10140
+AP_HW_ThunderTigerH743              11065
 AP_HW_Pixhawk6_ODID                 10053
 AP_HW_CUAV_NORA_ODID                11009
 AP_HW_CUAV_X7_PRO_ODID              11010

@@ -1232,6 +1232,10 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     // @User: Advanced
     AP_GROUPINFO("FS_EKF_FILT", 8, ParametersG2, fs_ekf_filt_hz, FS_EKF_FILT_DEFAULT),
 
+    // @Group: LIGHT_
+    // @Path: ../libraries/AP_PWMLight/AP_PWMLight.cpp
+    AP_SUBGROUPINFO(pwm_light, "LIGHT_", 9, ParametersG2, AP_PWMLight),
+
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
     AP_GROUPEND
