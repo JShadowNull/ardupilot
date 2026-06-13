@@ -34,6 +34,7 @@
 #endif
 #include <AC_Fence/AC_Fence_config.h>
 #include <AP_RangeFinder/AP_RangeFinder_config.h>
+#include <AP_Relay/AP_Relay_config.h>
 
 class AP_OSD_Backend;
 class AP_MSP;
@@ -232,6 +233,16 @@ private:
     AP_OSD_Setting hgt_abvterr{false, 23, 7};
     AP_OSD_Setting fence{false, 14, 9};
     AP_OSD_Setting rngf;
+#if AP_RELAY_ENABLED
+    AP_OSD_Setting relay1;
+    AP_OSD_Setting relay2;
+    AP_OSD_Setting relay3;
+    AP_OSD_Setting relay4;
+    AP_OSD_Setting relay5;
+    AP_OSD_Setting relay6;
+    // per-relay text preset selector (see relay_label_presets in AP_OSD_Screen.cpp)
+    AP_Int8 relay_label[6];
+#endif
 #if HAL_PLUSCODE_ENABLE
     AP_OSD_Setting pluscode;
 #endif
@@ -337,6 +348,15 @@ private:
 #endif
 #if AP_RANGEFINDER_ENABLED
     void draw_rngf(uint8_t x, uint8_t y);
+#endif
+#if AP_RELAY_ENABLED
+    void draw_relay(uint8_t instance, uint8_t x, uint8_t y);
+    void draw_relay1(uint8_t x, uint8_t y);
+    void draw_relay2(uint8_t x, uint8_t y);
+    void draw_relay3(uint8_t x, uint8_t y);
+    void draw_relay4(uint8_t x, uint8_t y);
+    void draw_relay5(uint8_t x, uint8_t y);
+    void draw_relay6(uint8_t x, uint8_t y);
 #endif
 
 #if AP_OSD_EXTENDED_LNK_STATS

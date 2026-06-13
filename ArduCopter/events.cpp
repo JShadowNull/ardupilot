@@ -1,9 +1,26 @@
 #include "Copter.h"
 
+#if AP_VIDEOTX_ENABLED
+#include <AP_VideoTX/AP_VideoTX.h>
+#endif
+
 /*
  *       This event will be called when the failsafe changes
  *       boolean failsafe reflects the current state
  */
+
+#if AP_VIDEOTX_ENABLED
+// set_vtx_radio_failsafe - force the VTX into pitmode (low power) on radio failsafe,
+// or restore it when contact is regained, if the VTX_PITMODE_ON_FS option is enabled
+void Copter::set_vtx_radio_failsafe(bool on)
+{
+    AP_VideoTX &videotx = AP::vtx();
+    if (!videotx.get_enabled() || !videotx.has_option(AP_VideoTX::VideoOptions::VTX_PITMODE_ON_FS)) {
+        return;
+    }
+    videotx.set_pitmode(on);
+}
+#endif
 
 bool Copter::failsafe_option(FailsafeOption opt) const
 {
@@ -38,6 +55,9 @@ void Copter::failsafe_radio_on_event()
             break;
         case FS_THR_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
+            break;
+        case FS_THR_ENABLED_LOITER_OR_LAND:
+            desired_action = FailsafeAction::LOITER;
             break;
         default:
             desired_action = FailsafeAction::LAND;
@@ -76,6 +96,11 @@ void Copter::failsafe_radio_on_event()
 
     // Call the failsafe action handler
     do_failsafe_action(desired_action, ModeReason::RADIO_FAILSAFE);
+
+#if AP_VIDEOTX_ENABLED
+    // optionally drop the VTX into pitmode while the radio is lost
+    set_vtx_radio_failsafe(true);
+#endif
 }
 
 // failsafe_off_event - respond to radio contact being regained
@@ -85,6 +110,11 @@ void Copter::failsafe_radio_off_event()
     // user can now override roll, pitch, yaw and throttle and even use flight mode switch to restore previous flight mode
     LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_RADIO, LogErrorCode::FAILSAFE_RESOLVED);
     gcs().send_text(MAV_SEVERITY_WARNING, "Radio Failsafe Cleared");
+
+#if AP_VIDEOTX_ENABLED
+    // restore VTX power now that the radio is back
+    set_vtx_radio_failsafe(false);
+#endif
 }
 
 void Copter::announce_failsafe(const char *type, const char *action_undertaken)
@@ -189,6 +219,9 @@ void Copter::failsafe_gcs_on_event(void)
             break;
         case FS_GCS_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
+            break;
+        case FS_GCS_ENABLED_LOITER_OR_LAND:
+            desired_action = FailsafeAction::LOITER;
             break;
         default: // if an invalid parameter value is set, the fallback is RTL
             desired_action = FailsafeAction::RTL;
@@ -451,6 +484,22 @@ void Copter::set_mode_brake_or_land_with_pause(ModeReason reason)
     set_mode_land_with_pause(reason);
 }
 
+// set_mode_loiter_or_land_with_pause - sets mode to LOITER if possible (requires position estimate)
+// or LAND with 4 second delay before descent starts
+// this is always called from a failsafe so we trigger notification to pilot
+void Copter::set_mode_loiter_or_land_with_pause(ModeReason reason)
+{
+#if MODE_LOITER_ENABLED
+    if (set_mode(Mode::Number::LOITER, reason)) {
+        AP_Notify::events.failsafe_mode_change = 1;
+        return;
+    }
+#endif
+
+    gcs().send_text(MAV_SEVERITY_WARNING, "Loiter Unavailable, Trying Land Mode");
+    set_mode_land_with_pause(reason);
+}
+
 bool Copter::should_disarm_on_failsafe() {
     if (ap.in_arming_delay) {
         return true;
@@ -504,6 +553,9 @@ void Copter::do_failsafe_action(FailsafeAction action, ModeReason reason){
             break;
         case FailsafeAction::BRAKE_LAND:
             set_mode_brake_or_land_with_pause(reason);
+            break;
+        case FailsafeAction::LOITER:
+            set_mode_loiter_or_land_with_pause(reason);
             break;
     }
 

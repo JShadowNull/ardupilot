@@ -1,9 +1,18 @@
-# ThunderTigerH743 Flight Controller
+# ThunderTiger 7in Platform
 
-The ThunderTigerH743 is a custom STM32H743 flight controller based on the
+The ThunderTiger flight controller is a custom STM32H743 board based on the
 Rotor Riot / Ewing Aerospace "Brave H7" OEM board (its USB bootloader
 enumerates as `BraveH7-BL`). It is a private target and is not in upstream
 ArduPilot.
+
+There are two ThunderTiger platforms that share **identical hardware** and
+differ only in their default tune parameters:
+
+ - **ThunderTiger7in** (this board) - the 7 inch airframe
+ - **ThunderTiger15in** - the 15 inch airframe; its `hwdef.dat` includes this
+   board's hwdef and its `defaults.parm` `@include`s this board's defaults,
+   overriding only the tune. Both build with the same board ID (11065) so
+   either firmware flashes the same physical hardware.
 
 ## Features
 
@@ -17,7 +26,7 @@ ArduPilot.
 
 ## Building
 
-    ./waf configure --board ThunderTigerH743
+    ./waf configure --board ThunderTiger7in
     ./waf copter
     ./waf --upload copter
 

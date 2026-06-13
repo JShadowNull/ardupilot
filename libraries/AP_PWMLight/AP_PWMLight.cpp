@@ -32,7 +32,7 @@ const AP_Param::GroupInfo AP_PWMLight::var_info[] = {
     // @Description: RC input channel whose full travel maps to 0 to 100% duty cycle
     // @Range: 1 16
     // @User: Standard
-    AP_GROUPINFO("RCIN", 3, AP_PWMLight, _rc_chan, 11),
+    AP_GROUPINFO("RCIN", 3, AP_PWMLight, _rc_chan, 9),
 
     // @Param: FREQ
     // @DisplayName: PWM light frequency

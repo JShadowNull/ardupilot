@@ -44,6 +44,7 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_RPM/AP_RPM.h>
+#include <AP_Relay/AP_Relay.h>
 #include <AP_MSP/AP_MSP.h>
 #if APM_BUILD_TYPE(APM_BUILD_Rover)
 #include <AP_WindVane/AP_WindVane.h>
@@ -1173,6 +1174,140 @@ const AP_Param::GroupInfo AP_OSD_Screen::var_info2[] = {
     // @Range: 0 32
     AP_GROUPINFO("ESC_IDX", 10, AP_OSD_Screen, esc_index, 0),
 #endif
+
+#if AP_RELAY_ENABLED
+    // @Param: RELAY1_EN
+    // @DisplayName: RELAY1_EN
+    // @Description: Displays the state (HI/LO) of relay 1
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY1_X
+    // @DisplayName: RELAY1_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY1_Y
+    // @DisplayName: RELAY1_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay1, "RELAY1", 11, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY2_EN
+    // @DisplayName: RELAY2_EN
+    // @Description: Displays the state (HI/LO) of relay 2
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY2_X
+    // @DisplayName: RELAY2_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY2_Y
+    // @DisplayName: RELAY2_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay2, "RELAY2", 12, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY3_EN
+    // @DisplayName: RELAY3_EN
+    // @Description: Displays the state (HI/LO) of relay 3
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY3_X
+    // @DisplayName: RELAY3_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY3_Y
+    // @DisplayName: RELAY3_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay3, "RELAY3", 13, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY4_EN
+    // @DisplayName: RELAY4_EN
+    // @Description: Displays the state (HI/LO) of relay 4
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY4_X
+    // @DisplayName: RELAY4_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY4_Y
+    // @DisplayName: RELAY4_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay4, "RELAY4", 14, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY5_EN
+    // @DisplayName: RELAY5_EN
+    // @Description: Displays the state (HI/LO) of relay 5
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY5_X
+    // @DisplayName: RELAY5_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY5_Y
+    // @DisplayName: RELAY5_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay5, "RELAY5", 15, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY6_EN
+    // @DisplayName: RELAY6_EN
+    // @Description: Displays the state (HI/LO) of relay 6
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: RELAY6_X
+    // @DisplayName: RELAY6_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 29
+
+    // @Param: RELAY6_Y
+    // @DisplayName: RELAY6_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 15
+    AP_SUBGROUPINFO(relay6, "RELAY6", 16, AP_OSD_Screen, AP_OSD_Setting),
+
+    // @Param: RELAY1_LBL
+    // @DisplayName: RELAY1 OSD text preset
+    // @Description: Text shown for relay 1 in place of the default R1:HI / R1:LO
+    // @Values: 0:Default (R1 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY1_LBL", 17, AP_OSD_Screen, relay_label[0], 0),
+
+    // @Param: RELAY2_LBL
+    // @DisplayName: RELAY2 OSD text preset
+    // @Description: Text shown for relay 2 in place of the default R2:HI / R2:LO
+    // @Values: 0:Default (R2 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY2_LBL", 18, AP_OSD_Screen, relay_label[1], 0),
+
+    // @Param: RELAY3_LBL
+    // @DisplayName: RELAY3 OSD text preset
+    // @Description: Text shown for relay 3 in place of the default R3:HI / R3:LO
+    // @Values: 0:Default (R3 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY3_LBL", 19, AP_OSD_Screen, relay_label[2], 0),
+
+    // @Param: RELAY4_LBL
+    // @DisplayName: RELAY4 OSD text preset
+    // @Description: Text shown for relay 4 in place of the default R4:HI / R4:LO
+    // @Values: 0:Default (R4 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY4_LBL", 20, AP_OSD_Screen, relay_label[3], 0),
+
+    // @Param: RELAY5_LBL
+    // @DisplayName: RELAY5 OSD text preset
+    // @Description: Text shown for relay 5 in place of the default R5:HI / R5:LO
+    // @Values: 0:Default (R5 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY5_LBL", 21, AP_OSD_Screen, relay_label[4], 0),
+
+    // @Param: RELAY6_LBL
+    // @DisplayName: RELAY6 OSD text preset
+    // @Description: Text shown for relay 6 in place of the default R6:HI / R6:LO
+    // @Values: 0:Default (R6 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    AP_GROUPINFO("RELAY6_LBL", 22, AP_OSD_Screen, relay_label[5], 0),
+#endif  // AP_RELAY_ENABLED
 
     AP_GROUPEND
 };
@@ -2504,6 +2639,51 @@ void AP_OSD_Screen::draw_vtx_power(uint8_t x, uint8_t y)
 }
 #endif  // AP_VIDEOTX_ENABLED
 
+#if AP_RELAY_ENABLED
+// text presets selectable per relay via OSDn_RELAYm_LBL. Index 0 is the built-in
+// "R<n>:HI / R<n>:LO" default and is handled specially in draw_relay().
+static const struct {
+    const char *hi;
+    const char *lo;
+} relay_label_presets[] = {
+    { "HI",           "LO"              },  // 0: default (rendered as R<n>:HI / R<n>:LO)
+    { "ON",           "OFF"             },  // 1
+    { "ARMED",        "DISARMED"        },  // 2
+    { "SENSOR ARMED", "SENSOR DISARMED" },  // 3
+    { "PUMP ON",      "PUMP OFF"        },  // 4
+    { "LIGHT ON",     "LIGHT OFF"       },  // 5
+};
+
+// draw a relay's state; nothing is drawn if the relay is not configured.
+// the displayed text depends on the OSDn_RELAYm_LBL preset.
+void AP_OSD_Screen::draw_relay(uint8_t instance, uint8_t x, uint8_t y)
+{
+    const AP_Relay *relay = AP::relay();
+    if (relay == nullptr || !relay->enabled(instance)) {
+        return;
+    }
+    const bool state = relay->get(instance);
+    const uint8_t preset = relay_label[instance];
+    if (preset == 0 || preset >= ARRAY_SIZE(relay_label_presets)) {
+        // built-in default
+        backend->write(x, y, false, "R%u:%s", (unsigned)(instance + 1), state ? "HI" : "LO");
+        return;
+    }
+    const char *txt = state ? relay_label_presets[preset].hi : relay_label_presets[preset].lo;
+    // a blank preset string means "show nothing for this state"
+    if (txt != nullptr && txt[0] != '\0') {
+        backend->write(x, y, false, "%s", txt);
+    }
+}
+
+void AP_OSD_Screen::draw_relay1(uint8_t x, uint8_t y) { draw_relay(0, x, y); }
+void AP_OSD_Screen::draw_relay2(uint8_t x, uint8_t y) { draw_relay(1, x, y); }
+void AP_OSD_Screen::draw_relay3(uint8_t x, uint8_t y) { draw_relay(2, x, y); }
+void AP_OSD_Screen::draw_relay4(uint8_t x, uint8_t y) { draw_relay(3, x, y); }
+void AP_OSD_Screen::draw_relay5(uint8_t x, uint8_t y) { draw_relay(4, x, y); }
+void AP_OSD_Screen::draw_relay6(uint8_t x, uint8_t y) { draw_relay(5, x, y); }
+#endif  // AP_RELAY_ENABLED
+
 #if AP_TERRAIN_AVAILABLE
 void AP_OSD_Screen::draw_hgt_abvterr(uint8_t x, uint8_t y)
 {
@@ -2622,6 +2802,14 @@ void AP_OSD_Screen::draw(void)
 #endif
 #if AP_VIDEOTX_ENABLED
     DRAW_SETTING(vtx_power);
+#endif
+#if AP_RELAY_ENABLED
+    DRAW_SETTING(relay1);
+    DRAW_SETTING(relay2);
+    DRAW_SETTING(relay3);
+    DRAW_SETTING(relay4);
+    DRAW_SETTING(relay5);
+    DRAW_SETTING(relay6);
 #endif
 
 #if HAL_WITH_ESC_TELEM

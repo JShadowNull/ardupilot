@@ -21,7 +21,7 @@
 #include <AP_Param/AP_Param.h>
 
 #define VTX_MAX_CHANNELS 8
-#define VTX_MAX_POWER_LEVELS 10
+#define VTX_MAX_POWER_LEVELS 12
 
 class AP_VideoTX {
 public:
@@ -51,6 +51,7 @@ public:
         VTX_SA_ONE_STOP_BIT   = (1 << 5),
         VTX_SA_IGNORE_CRC     = (1 << 6),
         VTX_CRSF_IGNORE_STAT  = (1 << 7),
+        VTX_PITMODE_ON_FS     = (1 << 8),  // enter pitmode (low power) on RC failsafe
     };
 
     static const char *band_names[];
@@ -152,6 +153,15 @@ public:
     bool has_option(VideoOptions option) const { return _options.get() & uint16_t(option); }
     bool get_configured_pitmode() const { return _options.get() & uint8_t(AP_VideoTX::VideoOptions::VTX_PITMODE); }
     bool get_pitmode() const { return _current_options & uint8_t(AP_VideoTX::VideoOptions::VTX_PITMODE); }
+    // force pitmode on/off at runtime without persisting to storage (e.g. from a failsafe).
+    // the backend picks up the change via update_options() on its next update.
+    void set_pitmode(bool enable) {
+        if (enable) {
+            _options.set(_options | uint16_t(AP_VideoTX::VideoOptions::VTX_PITMODE));
+        } else {
+            _options.set(_options & ~uint16_t(AP_VideoTX::VideoOptions::VTX_PITMODE));
+        }
+    }
     bool update_options() const;
     // get / set whether the vtx is enabled
     void set_enabled(bool enabled);

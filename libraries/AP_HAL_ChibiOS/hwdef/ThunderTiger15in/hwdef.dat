@@ -1,0 +1,9 @@
+# hw definition file for processing by chibios_pins.py
+# Thunder Tiger 15in platform.
+#
+# The 15in uses identical flight-controller hardware to the 7in platform,
+# so the entire hardware definition (including the APJ_BOARD_ID) is shared
+# by including the 7in hwdef. The only difference between the two platforms
+# is the default tune, which lives in this directory's defaults.parm.
+
+include ../ThunderTiger7in/hwdef.dat

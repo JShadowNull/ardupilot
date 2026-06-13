@@ -1,0 +1,4 @@
+# bootloader definition for the Thunder Tiger 15in platform.
+# Identical hardware to the 7in platform, so the bootloader is shared.
+
+include ../ThunderTiger7in/hwdef-bl.dat
