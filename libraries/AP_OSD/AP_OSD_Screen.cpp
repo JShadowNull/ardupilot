@@ -1275,31 +1275,31 @@ const AP_Param::GroupInfo AP_OSD_Screen::var_info2[] = {
     // @Param: RELAY1_LBL
     // @DisplayName: RELAY1 OSD text preset
     // @Description: Text shown for relay 1 in place of the default R1:HI / R1:LO
-    // @Values: 0:Default (R1 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    // @Values: 0:Default (R1 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF,6:ESAD (this+next relay combined)
     AP_GROUPINFO("RELAY1_LBL", 17, AP_OSD_Screen, relay_label[0], 0),
 
     // @Param: RELAY2_LBL
     // @DisplayName: RELAY2 OSD text preset
     // @Description: Text shown for relay 2 in place of the default R2:HI / R2:LO
-    // @Values: 0:Default (R2 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    // @Values: 0:Default (R2 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF,6:ESAD (this+next relay combined)
     AP_GROUPINFO("RELAY2_LBL", 18, AP_OSD_Screen, relay_label[1], 0),
 
     // @Param: RELAY3_LBL
     // @DisplayName: RELAY3 OSD text preset
     // @Description: Text shown for relay 3 in place of the default R3:HI / R3:LO
-    // @Values: 0:Default (R3 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    // @Values: 0:Default (R3 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF,6:ESAD (this+next relay combined)
     AP_GROUPINFO("RELAY3_LBL", 19, AP_OSD_Screen, relay_label[2], 0),
 
     // @Param: RELAY4_LBL
     // @DisplayName: RELAY4 OSD text preset
     // @Description: Text shown for relay 4 in place of the default R4:HI / R4:LO
-    // @Values: 0:Default (R4 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    // @Values: 0:Default (R4 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF,6:ESAD (this+next relay combined)
     AP_GROUPINFO("RELAY4_LBL", 20, AP_OSD_Screen, relay_label[3], 0),
 
     // @Param: RELAY5_LBL
     // @DisplayName: RELAY5 OSD text preset
     // @Description: Text shown for relay 5 in place of the default R5:HI / R5:LO
-    // @Values: 0:Default (R5 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF
+    // @Values: 0:Default (R5 HI/LO),1:ON/OFF,2:ARMED/DISARMED,3:SENSOR ARMED/SENSOR DISARMED,4:PUMP ON/OFF,5:LIGHT ON/OFF,6:ESAD (this+next relay combined)
     AP_GROUPINFO("RELAY5_LBL", 21, AP_OSD_Screen, relay_label[4], 0),
 
     // @Param: RELAY6_LBL
@@ -2652,7 +2652,12 @@ static const struct {
     { "SENSOR ARMED", "SENSOR DISARMED" },  // 3
     { "PUMP ON",      "PUMP OFF"        },  // 4
     { "LIGHT ON",     "LIGHT OFF"       },  // 5
+    { "ESAD",         "ESAD"            },  // 6: combined ESAD state, handled specially (see draw_relay)
 };
+
+// preset index that renders the combined ESAD status from this relay (arm) and
+// the next relay (fire) rather than a simple per-relay HI/LO label.
+static const uint8_t RELAY_LABEL_ESAD = 6;
 
 // draw a relay's state; nothing is drawn if the relay is not configured.
 // the displayed text depends on the OSDn_RELAYm_LBL preset.
@@ -2664,6 +2669,26 @@ void AP_OSD_Screen::draw_relay(uint8_t instance, uint8_t x, uint8_t y)
     }
     const bool state = relay->get(instance);
     const uint8_t preset = relay_label[instance];
+    if (preset == RELAY_LABEL_ESAD) {
+        // combined ESAD status: this relay is the arm line, the next relay is
+        // the fire line. The fire relay does not need its own OSD element.
+        const uint8_t fire = instance + 1;
+        const bool armed = state;
+        const bool fired = (fire < AP_RELAY_NUM_RELAYS && relay->enabled(fire)) ? relay->get(fire) : false;
+        const char *txt;
+        if (armed && fired) {
+            txt = "ESAD FIRED";
+        } else if (armed) {
+            txt = "ESAD ARMED";
+        } else if (fired) {
+            // fire line high while arm line is low: unexpected
+            txt = "ESAD ERROR";
+        } else {
+            txt = "ESAD DISARMED";
+        }
+        backend->write(x, y, false, "%s", txt);
+        return;
+    }
     if (preset == 0 || preset >= ARRAY_SIZE(relay_label_presets)) {
         // built-in default
         backend->write(x, y, false, "R%u:%s", (unsigned)(instance + 1), state ? "HI" : "LO");
