@@ -91,6 +91,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ROMFS',
     'AP_Proximity',
     'AP_PWMLight',
+    'AP_ESAD',
     'AP_Gripper',
     'AP_RTC',
     'AC_Sprayer',

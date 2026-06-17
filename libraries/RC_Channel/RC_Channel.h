@@ -297,8 +297,12 @@ public:
         SCRIPTING_7 =        306,
         SCRIPTING_8 =        307,
 
+        VTX_PITMODE =        309, // toggle VTX pit mode (cut/restore VTX power via the PIT-pin MOSFET)
+        ESAD_FIRE =          310, // ESAD fire request (gated by AP_ESAD arm + countdown interlock)
+        ESAD_ARM =           311, // ESAD arm request (gated by AP_ESAD liftoff timer + sequence)
+
         // this must be higher than any aux function above
-        AUX_FUNCTION_MAX =   308,
+        AUX_FUNCTION_MAX =   312,
     };
 
     // auxiliary switch handling (n.b.: we store this as 2-bits!):

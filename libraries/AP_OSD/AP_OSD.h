@@ -357,6 +357,7 @@ private:
     void draw_relay4(uint8_t x, uint8_t y);
     void draw_relay5(uint8_t x, uint8_t y);
     void draw_relay6(uint8_t x, uint8_t y);
+    void draw_esad();
 #endif
 
 #if AP_OSD_EXTENDED_LNK_STATS

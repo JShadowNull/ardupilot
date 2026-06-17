@@ -6,6 +6,7 @@
 #include "RC_Channel.h"
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_PWMLight/AP_PWMLight.h>
+#include <AP_ESAD/AP_ESAD.h>
 
 #if MODE_FOLLOW_ENABLED
  # include <AP_Follow/AP_Follow.h>
@@ -562,6 +563,9 @@ public:
 #if AP_WINCH_ENABLED
     AP_Winch winch;
 #endif
+
+    // Electronic Safe-Arm Device sequencing + fire interlock
+    AP_ESAD esad;
 
     // Additional pilot velocity items
     AP_Int16    pilot_speed_dn;

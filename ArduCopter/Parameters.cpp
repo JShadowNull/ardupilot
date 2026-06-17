@@ -1236,6 +1236,10 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     // @Path: ../libraries/AP_PWMLight/AP_PWMLight.cpp
     AP_SUBGROUPINFO(pwm_light, "LIGHT_", 9, ParametersG2, AP_PWMLight),
 
+    // @Group: ESAD_
+    // @Path: ../libraries/AP_ESAD/AP_ESAD.cpp
+    AP_SUBGROUPINFO(esad, "ESAD_", 10, ParametersG2, AP_ESAD),
+
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
     AP_GROUPEND

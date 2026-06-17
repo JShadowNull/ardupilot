@@ -57,6 +57,7 @@ extern const AP_HAL::HAL& hal;
 #include <AP_Mount/AP_Mount.h>
 #include <AP_Notify/AP_Notify.h>
 #include <AP_VideoTX/AP_VideoTX.h>
+#include <AP_ESAD/AP_ESAD.h>
 #include <AP_Torqeedo/AP_Torqeedo.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_Parachute/AP_Parachute_config.h>
@@ -196,6 +197,9 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Values{Plane}: 91:Airspeed Ratio Calibration
     // @Values{Plane}: 92:FBWA Mode
     // @Values{Copter, Rover, Plane}: 94:VTX Power
+    // @Values{Copter, Rover, Plane}: 309:VTX Pitmode
+    // @Values{Copter}: 310:ESAD Fire
+    // @Values{Copter}: 311:ESAD Arm
     // @Values{Plane}: 95:FBWA taildragger takeoff mode
     // @Values{Plane}: 96:Trigger re-reading of mode switch
     // @Values{Rover}: 97:Windvane home heading direction offset
@@ -689,7 +693,10 @@ void RC_Channel::init_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos 
 #endif
 #if AP_VIDEOTX_ENABLED
     case AUX_FUNC::VTX_POWER:
+    case AUX_FUNC::VTX_PITMODE:  // leave VTX at its default (powered) at boot
 #endif
+    case AUX_FUNC::ESAD_FIRE:    // never assert a fire request at boot
+    case AUX_FUNC::ESAD_ARM:     // never assert an arm request at boot
 #if AP_OPTICALFLOW_CALIBRATOR_ENABLED
     case AUX_FUNC::OPTFLOW_CAL:
 #endif
@@ -962,9 +969,25 @@ bool RC_Channel::read_aux()
     }
 
 #if AP_RC_CHANNEL_AUX_FUNCTION_STRINGS_ENABLED
-    // announce the change to the GCS:
+    // announce the change to the GCS, except for relay functions: the raw
+    // relay HIGH/LOW state must never be shown to the user.
+    bool announce = true;
+    switch (_option) {
+#if AP_SERVORELAYEVENTS_ENABLED && AP_RELAY_ENABLED
+    case AUX_FUNC::RELAY:
+    case AUX_FUNC::RELAY2:
+    case AUX_FUNC::RELAY3:
+    case AUX_FUNC::RELAY4:
+    case AUX_FUNC::RELAY5:
+    case AUX_FUNC::RELAY6:
+        announce = false;
+        break;
+#endif
+    default:
+        break;
+    }
     const char *aux_string = string_for_aux_function(_option);
-    if (aux_string != nullptr) {
+    if (announce && aux_string != nullptr) {
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "RC%i: %s %s", ch_in+1, aux_string, string_for_aux_pos(new_position));
     }
 #endif
@@ -1846,6 +1869,33 @@ bool RC_Channel::do_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos ch
         break;
     }
 #endif
+
+#if AP_VIDEOTX_ENABLED
+    case AUX_FUNC::VTX_PITMODE:
+        // HIGH = pit mode (cut VTX power via the PIT-pin MOSFET), LOW = powered
+        AP::vtx().set_pitmode(ch_flag == AuxSwitchPos::HIGH);
+        break;
+#endif
+
+    case AUX_FUNC::ESAD_FIRE: {
+        // ESAD fire request. AP_ESAD gates this behind arm + countdown; the
+        // request alone never energizes the fire relay.
+        AP_ESAD *esad = AP_ESAD::get_singleton();
+        if (esad != nullptr) {
+            esad->set_fire_request(ch_flag == AuxSwitchPos::HIGH);
+        }
+        break;
+    }
+
+    case AUX_FUNC::ESAD_ARM: {
+        // ESAD arm request. AP_ESAD gates this behind the post-liftoff timer
+        // and sequence; the request alone never energizes the arm relay.
+        AP_ESAD *esad = AP_ESAD::get_singleton();
+        if (esad != nullptr) {
+            esad->set_arm_request(ch_flag == AuxSwitchPos::HIGH);
+        }
+        break;
+    }
 
     // do nothing for these functions
 #if HAL_MOUNT_ENABLED
