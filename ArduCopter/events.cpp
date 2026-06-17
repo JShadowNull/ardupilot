@@ -10,15 +10,12 @@
  */
 
 #if AP_VIDEOTX_ENABLED
-// set_vtx_radio_failsafe - force the VTX into pitmode (low power) on radio failsafe,
-// or restore it when contact is regained, if the VTX_PITMODE_ON_FS option is enabled
+// set_vtx_radio_failsafe - intentionally a no-op on this airframe. The VTX is
+// never altered on radio failsafe; it stays at its configured (full) power so the
+// video link is preserved. Kept as a stub because the failsafe handlers call it.
 void Copter::set_vtx_radio_failsafe(bool on)
 {
-    AP_VideoTX &videotx = AP::vtx();
-    if (!videotx.get_enabled() || !videotx.has_option(AP_VideoTX::VideoOptions::VTX_PITMODE_ON_FS)) {
-        return;
-    }
-    videotx.set_pitmode(on);
+    (void)on;
 }
 #endif
 

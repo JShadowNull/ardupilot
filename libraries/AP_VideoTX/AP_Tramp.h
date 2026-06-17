@@ -38,10 +38,12 @@
 // Race lock - settings can't be changed
 #define TRAMP_CONTROL_RACE_LOCK (0x01)
 
-#define VTX_TRAMP_UART_BAUD            9600
-#define VTX_TRAMP_SMARTBAUD_MIN        9120     // -5%
-#define VTX_TRAMP_SMARTBAUD_MAX        10080    // +5%
-#define VTX_TRAMP_SMARTBAUD_STEP       120
+// TUE-RFVTX-5840 runs Tramp at 115200 (non-standard; standard Tramp is 9600).
+// Smartbaud window kept at +/-5% (12x the stock 9600-based constants).
+#define VTX_TRAMP_UART_BAUD            115200
+#define VTX_TRAMP_SMARTBAUD_MIN        109440   // -5%
+#define VTX_TRAMP_SMARTBAUD_MAX        120960   // +5%
+#define VTX_TRAMP_SMARTBAUD_STEP       1440
 
 class AP_Tramp
 {

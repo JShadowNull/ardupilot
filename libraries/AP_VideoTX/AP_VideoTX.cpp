@@ -113,13 +113,14 @@ AP_VideoTX::PowerLevel AP_VideoTX::_power_levels[VTX_MAX_POWER_LEVELS] = {
     { 0,    25,   14, 7    },
     { 0x11, 100,  20, 0xFF }, // only in SA 2.1
     { 1,    200,  23, 16   },
+    { 0x16, 250,  24, 0xFF }, // 250mW - TUE-RFVTX-5840 level 1, Tramp accepts raw mw
     { 0x12, 400,  26, 0xFF }, // only in SA 2.1
     { 2,    500,  27, 25   },
     { 0x12, 600,  28, 0xFF }, // Tramp lies above power levels and always returns 25/100/200/400/600
     { 3,    800,  29, 40   },
-    { 0x13, 1000, 30, 0xFF }, // only in SA 2.1
-    { 0x14, 2000, 33, 0xFF }, // 2W - SA 2.1 reports dbm, Tramp accepts raw mw
-    { 0x15, 4000, 36, 0xFF }, // 4W - SA 2.1 reports dbm, Tramp accepts raw mw
+    { 0x13, 1000, 30, 0xFF }, // 1W - TUE-RFVTX-5840 level 2, Tramp accepts raw mw
+    { 0x17, 2500, 34, 0xFF }, // 2.5W - TUE-RFVTX-5840 level 3, Tramp accepts raw mw
+    { 0x15, 4000, 36, 0xFF }, // 4W - TUE-RFVTX-5840 level 4, Tramp accepts raw mw
     { 0xFF, 0,    0,  0XFF, PowerActive::Inactive }  // slot reserved for a custom power level
 };
 
@@ -355,6 +356,16 @@ void AP_VideoTX::update(void)
             _options.set(_options | uint8_t(VideoOptions::VTX_PITMODE));
         }
     }
+
+#ifdef HAL_VTX_PIT_GPIO
+    // This board has no protocol pit mode; a MOSFET on the VTX power rail (the
+    // "PIT" pad) is switched directly instead. Pit mode -> cut VTX power.
+    // Polarity: pin HIGH = VTX powered (matches the pad's idle pull-up), so drive
+    // LOW to enter pit mode. Invert here if the MOSFET is wired the other way.
+    hal.gpio->pinMode(HAL_VTX_PIT_GPIO, HAL_GPIO_OUTPUT);
+    hal.gpio->write(HAL_VTX_PIT_GPIO, get_configured_pitmode() ? 0 : 1);
+#endif
+
     // check that the requested power is actually allowed
     // reset if not
     if (_power_mw != get_power_mw()) {

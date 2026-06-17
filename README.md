@@ -54,12 +54,13 @@ Both share identical hardware; they differ only in their bundled
 - Adds `OSDn_RELAY1..6` display elements with selectable preset labels, so relay/switch states can be shown on the analog OSD.
 
 ### VTX improvements (`libraries/AP_VideoTX/`)
-- Adds 2 W / 4 W power levels (range extended to 4000 mW).
-- `VTX_OPTIONS` bit to force **pit mode on RC failsafe** (kills video TX power when the link is lost).
+- Tuned for the **Top-Unum TUE-RFVTX-5840** (IRC Tramp, analog 5.8 GHz): real power table **250 / 1000 / 2500 / 4000 mW** (24 / 30 / 34 / 36 dBm), range extended to 4000 mW.
+- Tramp baud changed from the stock 9600 to **115200** (per the TUE-RFVTX-5840 datasheet; smartbaud window re-centred accordingly in `AP_Tramp.h`).
+- `VTX_OPTIONS` bit 8 (**256**) = drop the VTX to **minimum power (250 mW) on RC failsafe** and restore the configured power when the link returns. (This VTX has no pit mode, so power is reduced rather than pitmoded.)
 
 ### "Loiter-or-Land" failsafe (`ArduCopter/`)
 - New failsafe action (option **8**) selectable on `FS_THR_ENABLE`, `FS_GCS_ENABLE`, and the battery monitor: loiter if a position estimate is available, otherwise land.
-- VTX is put into pit mode on RC failsafe.
+- VTX is dropped to minimum power on RC failsafe (see above).
 
 ---
 

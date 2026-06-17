@@ -168,4 +168,7 @@ PE1  INT_BARO INPUT PULLUP GPIO(94)
 
 # spare pads
 PA10 CC INPUT PULLUP GPIO(91)
-PB0  PIT INPUT PULLUP GPIO(92)
+# VTX power MOSFET on the "PIT" pad. Output, default HIGH = VTX powered.
+# AP_VideoTX drives this low for pit mode (the VTX has no protocol pit mode).
+PB0  VTX_PIT OUTPUT GPIO(92) HIGH
+define HAL_VTX_PIT_GPIO 92

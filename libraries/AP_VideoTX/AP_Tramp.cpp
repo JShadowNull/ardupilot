@@ -23,7 +23,9 @@
 
 #if AP_TRAMP_ENABLED
 
-#define AP_TRAMP_UART_BAUD            9600
+// TUE-RFVTX-5840 runs IRC Tramp at a non-standard 115200 baud (per mfr datasheet),
+// not the usual 9600. See also the smartbaud window in AP_Tramp.h.
+#define AP_TRAMP_UART_BAUD            115200
 // request and response size is 16 bytes
 #define AP_TRAMP_UART_BUFSIZE_RX      32
 #define AP_TRAMP_UART_BUFSIZE_TX      32
@@ -111,8 +113,14 @@ char AP_Tramp::handle_response(void)
         if (freq != 0) {
             // Got response, update device status
             const uint16_t power = response_buffer[4]|(response_buffer[5] << 8);
-            cur_control_mode = response_buffer[6]; // Currently only used for race lock
-            const bool pit_mode = response_buffer[7];
+            // TUE-RFVTX-5840 has no race lock and no pit mode (per mfr datasheet),
+            // but it still returns non-zero values in the control-mode (byte 6)
+            // and pit-mode (byte 7) fields. The stock driver reads those as
+            // "race locked" / "in pit mode" and then silently refuses to send any
+            // frequency/power config command - which is why status (the OSD power
+            // readout) works but control does not. Force both off for this VTX.
+            cur_control_mode = 0;          // never treat as race-locked
+            const bool pit_mode = false;   // VTX has no pit mode
             cur_act_power = response_buffer[8]|(response_buffer[9] << 8);
 
             // update the vtx

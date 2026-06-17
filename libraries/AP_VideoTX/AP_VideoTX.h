@@ -21,7 +21,7 @@
 #include <AP_Param/AP_Param.h>
 
 #define VTX_MAX_CHANNELS 8
-#define VTX_MAX_POWER_LEVELS 12
+#define VTX_MAX_POWER_LEVELS 13
 
 class AP_VideoTX {
 public:
@@ -51,7 +51,7 @@ public:
         VTX_SA_ONE_STOP_BIT   = (1 << 5),
         VTX_SA_IGNORE_CRC     = (1 << 6),
         VTX_CRSF_IGNORE_STAT  = (1 << 7),
-        VTX_PITMODE_ON_FS     = (1 << 8),  // enter pitmode (low power) on RC failsafe
+        VTX_PITMODE_ON_FS     = (1 << 8),  // enter pitmode on RC failsafe
     };
 
     static const char *band_names[];
