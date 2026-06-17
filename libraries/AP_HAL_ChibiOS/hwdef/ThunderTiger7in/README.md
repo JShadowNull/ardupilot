@@ -118,12 +118,18 @@ The PWM outputs and a couple of spare pads are available as GPIOs:
 
 ## Bootloader
 
-The on-board bootloader is in the OpenDroneID range (board id 11065 =
-10000 + 1065), which means it verifies firmware before booting. The hwdef
-sets `AP_CHECK_FIRMWARE_ENABLED 1` so the app descriptor (image CRC and board
-id) gets embedded; without it the bootloader returns FAIL_REASON_NO_APP_SIG.
+The board runs our own bootloader, built from `hwdef-bl.dat` and flashed with
+the firmware. The board id is 11065, in the OpenDroneID range (10000 + 1065),
+so the bootloader verifies firmware before booting. The hwdef sets
+`AP_CHECK_FIRMWARE_ENABLED 1` so the app descriptor (image CRC and board id)
+gets embedded; without it the bootloader returns FAIL_REASON_NO_APP_SIG.
 
-`AP_BOOTLOADER_FLASHING_ENABLED 0` keeps the firmware from touching the
-bootloader - the board keeps the OEM one. A bootloader build (`hwdef-bl.dat`,
-prebuilt in `Tools/bootloaders/ThunderTigerH743_bl.*`) is included for
-flashing manually over SWD if it ever needs replacing.
+`AP_BOOTLOADER_FLASHING_ENABLED 1` makes the firmware embed our bootloader and
+flash it on boot. The bootloader filename is derived from the board directory
+name, so each target embeds its own matching binary:
+
+ - ThunderTiger7in  -> `Tools/bootloaders/ThunderTiger7in_bl.bin`
+ - ThunderTiger15in -> `Tools/bootloaders/ThunderTiger15in_bl.bin`
+
+Rebuild them with `Tools/scripts/build_bootloaders.py ThunderTiger7in`
+(and `ThunderTiger15in`) whenever `hwdef-bl.dat` changes.

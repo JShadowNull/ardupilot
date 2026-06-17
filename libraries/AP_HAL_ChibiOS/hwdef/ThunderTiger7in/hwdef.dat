@@ -15,9 +15,8 @@ FLASH_SIZE_KB 2048
 # bootloader takes first sector
 FLASH_RESERVE_START_KB 128
 
-# don't flash the bootloader from the firmware, the board keeps its
-# existing bootloader
-define AP_BOOTLOADER_FLASHING_ENABLED 0
+# embed our bootloader in the firmware and flash it on boot
+define AP_BOOTLOADER_FLASHING_ENABLED 1
 
 # embed the app descriptor, the bootloader checks it before booting
 define AP_CHECK_FIRMWARE_ENABLED 1
