@@ -130,6 +130,7 @@ define HAL_GPIO_B_LED_PIN 91
 # IO
 PC3  CAM_SW OUTPUT GPIO(82) LOW
 define RELAY2_PIN_DEFAULT 81
+define RELAY3_PIN_DEFAULT 82
 
 # Dataflash setup
 SPIDEV dataflash SPI3 DEVID1 FLASH1_CS     MODE3 32*MHZ 32*MHZ
@@ -166,3 +167,9 @@ define AP_VIDEOTX_ENABLED 1
 define AP_SMARTAUDIO_ENABLED 1
 
 include ../include/minimize_fpv_osd.inc
+
+# Re-enable the MAVLink GPS backend (GPS_TYPE=14). minimize_fpv_osd.inc
+# disables all GPS backends except a few; MAV is needed for GPS_INPUT
+# injection over MAVLink (e.g. 4G modem / companion-fed position).
+define AP_GPS_MAV_ENABLED 1
+

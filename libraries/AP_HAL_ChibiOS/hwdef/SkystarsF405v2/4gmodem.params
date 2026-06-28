@@ -1,0 +1,31 @@
+# 4G modem variant for SkystarsF405v2
+# Inherits all settings from the board default param file, then overrides
+# the serial/GPS/EKF source bits needed to drive MAVLink over a 4G modem
+# link on SERIAL1 with a MAVLink-injected GPS.
+#
+# Build with (the path MUST be absolute -- a relative path silently falls
+# back to defaults.parm):
+#   ./waf configure --board SkystarsF405v2 \
+#       --default-parameters "$PWD/libraries/AP_HAL_ChibiOS/hwdef/SkystarsF405v2/4gmodem.params"
+#   ./waf copter
+#
+# A plain default build (no --default-parameters) keeps using defaults.parm.
+
+@include defaults.parm
+
+# SERIAL1 -> MAVLink2 @ 115200 for the 4G modem
+SERIAL1_PROTOCOL,2
+SERIAL1_BAUD,115
+
+# GPS provided over MAVLink (GPS_INPUT) rather than a physical receiver
+GPS1_TYPE,14
+
+# EKF3 horizontal position source = GPS
+EK3_SRC1_POSXY,3
+
+# Custom RC + GCS failsafe action (value 8): Loiter if position estimate is
+# good, otherwise fall back to AltHold. GCS failsafe matters here because the
+# 4G modem link is the primary command path -- enable it so link loss acts.
+FS_THR_ENABLE,8
+FS_GCS_ENABLE,8
+
