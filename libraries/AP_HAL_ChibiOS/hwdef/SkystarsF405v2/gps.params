@@ -1,0 +1,45 @@
+# GPS-equipped variant for SkystarsF405v2
+# Pass this when the drone has a physical GPS + compass on SERIAL5 (the board's
+# designated GPS UART). Inherits everything from defaults.parm, then turns on
+# the GPS, the compass, the EKF GPS position sources, and Stab/AltHold/Loiter
+# modes -- so a GPS drone comes up ready without per-board live config.
+#
+# Build with (the path MUST be absolute -- a relative path silently falls back
+# to defaults.parm):
+#   ./waf configure --board SkystarsF405v2 \
+#       --default-parameters "$PWD/libraries/AP_HAL_ChibiOS/hwdef/SkystarsF405v2/gps.params"
+#   ./waf copter
+#
+# A GPS lock is NOT required to arm (ARMING_CHECK stays 0 from the base) -- GPS
+# is for Loiter/autonomy once locked; Stab/AltHold fly without it. Compass and
+# accel still calibrate per drone.
+#
+# Boat + GPS: build boat_gps.params instead -- it @includes this file plus the
+# boat gyro overrides. (Plain boats.params is GPS-free, for boats without a GPS.)
+
+@include defaults.parm
+
+# GPS on SERIAL5 (board's default GPS UART). u-blox auto-detect + auto-baud.
+SERIAL5_PROTOCOL,5
+GPS1_TYPE,1
+
+# Compass = the GPS module's magnetometer on I2C
+COMPASS_ENABLE,1
+COMPASS_USE,1
+
+# EKF3: horizontal position/velocity from GPS, yaw from compass
+EK3_SRC1_POSXY,3
+EK3_SRC1_VELXY,3
+EK3_SRC1_YAW,1
+
+# Don't require a GPS lock to arm
+ARMING_NEED_LOC,0
+
+# Flight modes on ch6: Stabilize / AltHold / Loiter
+FLTMODE_CH,6
+FLTMODE1,0
+FLTMODE2,0
+FLTMODE3,2
+FLTMODE4,2
+FLTMODE5,5
+FLTMODE6,5

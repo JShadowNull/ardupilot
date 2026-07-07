@@ -1,0 +1,29 @@
+# Boat-launch variant for SkystarsF405v2  (NO GPS)
+# @includes defaults.parm and adds ONLY the gyro overrides for launching off a
+# rocking boat. It does NOT enable GPS -- boats don't always carry one. For a
+# boat that DOES have a GPS, build boat_gps.params instead.
+#
+# Build with (the path MUST be absolute -- a relative path silently falls back
+# to defaults.parm):
+#   ./waf configure --board SkystarsF405v2 \
+#       --default-parameters "$PWD/libraries/AP_HAL_ChibiOS/hwdef/SkystarsF405v2/boats.params"
+#   ./waf copter
+#
+# A boat rocking at launch corrupts the start-up gyro cal (and would otherwise
+# block arming). This build skips that cal and uses gyro offsets saved from a
+# one-time cal on solid ground.
+#
+# IMPORTANT: do ONE gyro calibration on solid, level ground first so good
+# INS_GYROFFS_* offsets are saved -- with INS_GYR_CAL=0 the FC uses those
+# instead of recalibrating at boot.
+
+@include defaults.parm
+
+# Never calibrate gyros at boot (0 = GYRO_CAL_NEVER). A boat rocking at launch
+# throws the start-up cal off; use the offsets from a one-time ground cal.
+INS_GYR_CAL,0
+
+# Keep all arming checks off (base already sets this) so the gyro/INS check
+# can't stop us arming from a moving boat. Bit 4 of ARMING_CHECK is the INS
+# (accel+gyro) check; ARMING_CHECK=0 disables every check, including it.
+ARMING_CHECK,0
