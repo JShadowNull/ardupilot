@@ -852,6 +852,7 @@ void AP_CRSF_Telem::update_vtx_params()
             _vtx_dbm_update = false;
         } else if (_vtx_power_change_pending) {
             _telem.ext.command.payload[0] = AP_RCProtocol_CRSF::CRSF_COMMAND_VTX_POWER;
+            // Round to nearest discrete power level
             if (vtx.get_configured_power_mw() < 26) {
                 vtx.set_configured_power_mw(25);
             } else if (vtx.get_configured_power_mw() < 201) {
@@ -866,8 +867,22 @@ void AP_CRSF_Telem::update_vtx_params()
                 } else {
                     vtx.set_configured_power_mw(500);
                 }
+            } else if (vtx.get_configured_power_mw() < 1001) {
+                if (vtx.get_configured_power_mw() < 901) {
+                    vtx.set_configured_power_mw(800);
+                } else {
+                    vtx.set_configured_power_mw(1000);
+                }
+            } else if (vtx.get_configured_power_mw() < 1401) {
+                vtx.set_configured_power_mw(1200);
+            } else if (vtx.get_configured_power_mw() < 1801) {
+                vtx.set_configured_power_mw(1600);
+            } else if (vtx.get_configured_power_mw() < 2251) {
+                vtx.set_configured_power_mw(2000);
+            } else if (vtx.get_configured_power_mw() < 2751) {
+                vtx.set_configured_power_mw(2500);
             } else {
-                vtx.set_configured_power_mw(800);
+                vtx.set_configured_power_mw(3000);
             }
             _telem.ext.command.payload[1] = vtx.get_configured_power_level();
             _vtx_dbm_update = true;

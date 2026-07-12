@@ -715,6 +715,7 @@ void AP_BattMonitor::read()
             }
             drivers[i]->read();
             drivers[i]->update_resistance_estimate();
+            update_consumption_learning(i);
 
 #if AP_BATTERY_ESC_TELEM_OUTBOUND_ENABLED
             drivers[i]->update_esc_telem_outbound();
@@ -826,6 +827,100 @@ bool AP_BattMonitor::capacity_remaining_pct(uint8_t &percentage, uint8_t instanc
         return drivers[instance]->capacity_remaining_pct(percentage);
     }
     return false;
+}
+
+/*
+  update the learned average consumption and estimate remaining battery time.
+
+  The estimate combines a learned average current draw (the calibration prior,
+  weighted as AP_BATT_MONITOR_LRN_PRIOR_TC_S seconds of data) with the current
+  flight's running average, so the countdown is steady early in flight and
+  converges to actual consumption as the flight progresses. At disarm the
+  flight's average is blended into the learned value (like MOT_HOVER_LEARN).
+ */
+void AP_BattMonitor::update_consumption_learning(uint8_t instance)
+{
+    if (drivers[instance]->has_time_remaining()) {
+        // driver provides its own estimate (e.g. smart battery)
+        return;
+    }
+
+    BattMonitor_State &st = state[instance];
+    AP_BattMonitor_Params &params = _params[instance];
+    auto &lrn = _consumption_lrn[instance];
+
+    float consumed;
+    if (!consumed_mah(consumed, instance)) {
+        st.has_time_remaining = false;
+        return;
+    }
+
+    const bool armed = hal.util->get_soft_armed();
+    const uint32_t now_ms = AP_HAL::millis();
+
+    if (armed && !lrn.was_armed) {
+        // just armed, start tracking this flight
+        lrn.start_mah = consumed;
+        lrn.start_ms = now_ms;
+    }
+
+    // running average current over this flight; 1 mAh == 3.6 A.s
+    float flight_avg_amps = 0;
+    float flight_time_s = 0;
+    if (lrn.start_ms != 0) {
+        flight_time_s = (now_ms - lrn.start_ms) * 0.001f;
+        if (flight_time_s > AP_BATT_MONITOR_LRN_MIN_AVG_S) {
+            flight_avg_amps = (consumed - lrn.start_mah) * 3.6f / flight_time_s;
+        }
+    }
+
+    if (!armed && lrn.was_armed) {
+        // disarmed, fold this flight's average into the learned value
+        if (params._consumption_learn > 0 &&
+            flight_time_s >= AP_BATT_MONITOR_LRN_MIN_FLIGHT_S &&
+            flight_avg_amps > AP_BATT_MONITOR_LRN_MIN_AMPS) {
+            float learned = params._learned_avg_amps;
+            if (learned <= AP_BATT_MONITOR_LRN_MIN_AMPS) {
+                learned = flight_avg_amps;
+            } else {
+                learned += AP_BATT_MONITOR_LRN_ALPHA * (flight_avg_amps - learned);
+            }
+            if (params._consumption_learn == 2) {
+                params._learned_avg_amps.set_and_save(learned);
+            } else {
+                params._learned_avg_amps.set(learned);
+            }
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Battery %u: learned avg draw %.1fA", instance+1, (double)learned);
+        }
+        lrn.start_ms = 0;
+    }
+    lrn.was_armed = armed;
+
+    // blend learned prior with this flight's running average
+    const float prior_amps = params._learned_avg_amps;
+    float est_amps;
+    if (armed && flight_avg_amps > AP_BATT_MONITOR_LRN_MIN_AMPS) {
+        if (prior_amps > AP_BATT_MONITOR_LRN_MIN_AMPS) {
+            est_amps = (AP_BATT_MONITOR_LRN_PRIOR_TC_S * prior_amps + flight_time_s * flight_avg_amps) /
+                       (AP_BATT_MONITOR_LRN_PRIOR_TC_S + flight_time_s);
+        } else {
+            est_amps = flight_avg_amps;
+        }
+    } else {
+        // disarmed or too early in the flight: use the learned value alone
+        est_amps = prior_amps;
+    }
+
+    const float capacity_mah = params._pack_capacity;
+    if (est_amps <= AP_BATT_MONITOR_LRN_MIN_AMPS || capacity_mah <= 0) {
+        st.has_time_remaining = false;
+        return;
+    }
+
+    // count down to the low-battery failsafe reserve, not to a dead pack
+    const float usable_mah = capacity_mah - params._low_capacity - consumed;
+    st.time_remaining = usable_mah > 0 ? uint32_t(usable_mah * 3.6f / est_amps) : 0;
+    st.has_time_remaining = true;
 }
 
 /// time_remaining - returns remaining battery time

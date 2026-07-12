@@ -246,6 +246,14 @@ const AP_Param::GroupInfo AP_OSD::var_info[] = {
     AP_GROUPINFO("_SB_V_EXT", 36, AP_OSD, sidebar_v_ext, 0),
 #endif // HAL_OSD_SIDEBAR_ENABLE
 
+    // @Param: _W_TIMEREM
+    // @DisplayName: Time remaining warn level
+    // @Description: Blinks the battery time remaining panel (TIMEREM) when the estimated time remaining is at or below this value. Set to 0 to disable blinking.
+    // @Range: 0 3600
+    // @Units: s
+    // @User: Standard
+    AP_GROUPINFO("_W_TIMEREM", 37, AP_OSD, warn_timerem, 60),
+
 #endif //osd enabled
 #if OSD_PARAM_ENABLED
     // @Group: 5_

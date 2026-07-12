@@ -23,48 +23,45 @@
 bool ModeAuto::init(bool ignore_checks)
 {
     auto_RTL = false;
-    if (mission.num_commands() > 1 || ignore_checks) {
-        // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
-        if (motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
-            return false;
-        }
 
-        _mode = SubMode::LOITER;
-
-        // stop ROI from carrying over from previous runs of the mission
-        // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
-        if (auto_yaw.mode() == AutoYaw::Mode::ROI) {
-            auto_yaw.set_mode(AutoYaw::Mode::HOLD);
-        }
-
-        // initialise waypoint and spline controller
-        wp_nav->wp_and_spline_init();
-
-        // initialise desired speed overrides
-        desired_speed_override = {0, 0, 0};
-
-        // set flag to start mission
-        waiting_to_start = true;
-
-        // initialise mission change check (ignore results)
-        IGNORE_RETURN(mis_change_detector.check_for_mission_change());
-
-        // clear guided limits
-        copter.mode_guided.limit_clear();
-
-        // reset flag indicating if pilot has applied roll or pitch inputs during landing
-        copter.ap.land_repo_active = false;
-
-#if AC_PRECLAND_ENABLED
-        // initialise precland state machine
-        copter.precland_statemachine.init();
-#endif
-
-        return true;
-    } else {
+    // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
+    if (mission.num_commands() > 1 && motors->armed() && copter.ap.land_complete && !mission.starts_with_takeoff_cmd()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
         return false;
     }
+
+    _mode = SubMode::LOITER;
+
+    // stop ROI from carrying over from previous runs of the mission
+    // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
+    if (auto_yaw.mode() == AutoYaw::Mode::ROI) {
+        auto_yaw.set_mode(AutoYaw::Mode::HOLD);
+    }
+
+    // initialise waypoint and spline controller
+    wp_nav->wp_and_spline_init();
+
+    // initialise desired speed overrides
+    desired_speed_override = {0, 0, 0};
+
+    // set flag to start mission
+    waiting_to_start = true;
+
+    // initialise mission change check (ignore results)
+    IGNORE_RETURN(mis_change_detector.check_for_mission_change());
+
+    // clear guided limits
+    copter.mode_guided.limit_clear();
+
+    // reset flag indicating if pilot has applied roll or pitch inputs during landing
+    copter.ap.land_repo_active = false;
+
+#if AC_PRECLAND_ENABLED
+    // initialise precland state machine
+    copter.precland_statemachine.init();
+#endif
+
+    return true;
 }
 
 // stop mission when we leave auto mode
@@ -84,6 +81,13 @@ void ModeAuto::exit()
 //      should be called at 100hz or more
 void ModeAuto::run()
 {
+    // If no mission, switch to Guided mode
+    if (mission.num_commands() <= 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto: No mission, switching to Guided");
+        set_mode(Mode::Number::GUIDED, ModeReason::MISSION_END);
+        return;
+    }
+
     // start or update mission
     if (waiting_to_start) {
         // don't start the mission until we have an origin
@@ -811,6 +815,14 @@ void ModeAuto::exit_mission()
 {
     // play a tone
     AP_Notify::events.mission_complete = 1;
+
+    // Clear mission on completion (do this before mode changes or disarm)
+    if (!mission.clear()) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Auto: Failed to clear mission");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto: Mission cleared");
+    }
+
     // if we are not on the ground switch to loiter or land
     if (!copter.ap.land_complete) {
         // try to enter loiter but if that fails land

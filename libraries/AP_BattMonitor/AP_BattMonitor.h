@@ -26,6 +26,13 @@
 #define AP_BATT_MONITOR_RES_EST_TC_1        0.5f
 #define AP_BATT_MONITOR_RES_EST_TC_2        0.1f
 
+// consumption learning for time-remaining estimation
+#define AP_BATT_MONITOR_LRN_PRIOR_TC_S      90.0f   // learned average is weighted as this many seconds of flight data
+#define AP_BATT_MONITOR_LRN_MIN_FLIGHT_S    60.0f   // minimum flight duration to learn from
+#define AP_BATT_MONITOR_LRN_MIN_AVG_S       10.0f   // minimum flight duration before the in-flight average is trusted
+#define AP_BATT_MONITOR_LRN_ALPHA           0.3f    // blend fraction of each new flight into the learned average
+#define AP_BATT_MONITOR_LRN_MIN_AMPS        0.1f    // sanity floor for current estimates
+
 #if BOARD_FLASH_SIZE > 1024
 #define AP_BATT_MONITOR_CELLS_MAX           14
 #else
@@ -310,6 +317,16 @@ private:
     uint8_t     _num_instances;                                     /// number of monitors
 
     void convert_dynamic_param_groups(uint8_t instance);
+
+    // per-instance state for consumption learning and time-remaining estimation
+    struct {
+        float    start_mah;     // consumed_mah at arming
+        uint32_t start_ms;      // system time of arming, zero when no flight in progress
+        bool     was_armed;
+    } _consumption_lrn[AP_BATT_MONITOR_MAX_INSTANCES];
+
+    // update learned consumption and time-remaining estimate for one instance
+    void update_consumption_learning(uint8_t instance);
 
     /// returns the failsafe state of the battery
     Failsafe check_failsafe(const uint8_t instance);

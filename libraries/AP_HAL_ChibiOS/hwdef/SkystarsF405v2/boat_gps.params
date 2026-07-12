@@ -1,0 +1,22 @@
+# Boat-launch + GPS variant for SkystarsF405v2
+# For a boat drone that DOES carry a GPS. Chain-@includes gps.params (GPS on
+# SERIAL5 + compass + EKF sources + Stab/AltHold/Loiter modes), which itself
+# @includes defaults.parm -- then adds the boat gyro overrides on top.
+#
+# This is just boats.params + gps.params combined, since --default-parameters
+# only takes one file. Boat (gyro) and GPS are otherwise independent variants.
+#
+# Build with (the path MUST be absolute):
+#   ./waf configure --board SkystarsF405v2 \
+#       --default-parameters "$PWD/libraries/AP_HAL_ChibiOS/hwdef/SkystarsF405v2/boat_gps.params"
+#   ./waf copter
+#
+# Same gyro caveat as boats.params: do a one-time gyro cal on solid, level
+# ground first so good INS_GYROFFS_* offsets are saved (INS_GYR_CAL=0 uses
+# them). Compass + accel calibrate per drone; outdoors for GPS lock.
+
+@include gps.params
+
+# Boat gyro overrides (see boats.params for the why)
+INS_GYR_CAL,0
+ARMING_CHECK,0

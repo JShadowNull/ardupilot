@@ -37,7 +37,7 @@ const AP_Param::GroupInfo AP_VideoTX::var_info[] = {
     // @Param: POWER
     // @DisplayName: Video Transmitter Power Level
     // @Description: Video Transmitter Power Level. Different VTXs support different power levels, the power level chosen will be rounded down to the nearest supported power level
-    // @Range: 1 1000
+    // @Range: 1 2500
     AP_GROUPINFO("POWER",    2, AP_VideoTX, _power_mw, 0),
 
     // @Param: CHANNEL
@@ -71,9 +71,9 @@ const AP_Param::GroupInfo AP_VideoTX::var_info[] = {
 
     // @Param: MAX_POWER
     // @DisplayName: Video Transmitter Max Power Level
-    // @Description: Video Transmitter Maximum Power Level. Different VTXs support different power levels, this prevents the power aux switch from requesting too high a power level. The switch supports 6 power levels and the selected power will be a subdivision between 0 and this setting.
-    // @Range: 25 1000
-    AP_GROUPINFO("MAX_POWER", 7, AP_VideoTX, _max_power_mw, 800),
+    // @Description: Video Transmitter Maximum Power Level. Different VTXs support different power levels, this prevents the power aux switch from requesting too high a power level. The switch supports 6 power levels and the selected power will be a subdivision between 0 and this setting. WARNING: Ensure compliance with local regulations before using power levels above 25mW.
+    // @Range: 25 2500
+    AP_GROUPINFO("MAX_POWER", 7, AP_VideoTX, _max_power_mw, 2500),
 
     AP_GROUPEND
 };
@@ -107,18 +107,30 @@ const uint16_t AP_VideoTX::VIDEO_CHANNELS[AP_VideoTX::MAX_BANDS][VTX_MAX_CHANNEL
 // mapping of power level to milliwatt to dbm
 // valid power levels from SmartAudio spec, the adjacent levels might be the actual values
 // so these are marked as level + 0x10 and will be switched if a dbm message proves it
+// Power table curated for the SkystarsF405v2's IRC Tramp analog VTX.
+// The VTX reports a 2500mW hardware max over Tramp (read live from the device
+// limits, see AP_Tramp), and Tramp exposes no discrete power table - it snaps
+// any requested mW to its own nearest internal step. So we mark a clean 6-level
+// ladder (0/25/200/500/1000/2500) as the Active levels and everything else
+// Inactive; change_power() then spreads exactly those six across the 6-position
+// RC switch, with pos0 = 0mW = pitmode. Keep VTX_MAX_POWER at 2500.
 AP_VideoTX::PowerLevel AP_VideoTX::_power_levels[VTX_MAX_POWER_LEVELS] = {
-    // level, mw, dbm, dac
-    { 0xFF,  0,    0, 0    }, // only in SA 2.1
-    { 0,    25,   14, 7    },
-    { 0x11, 100,  20, 0xFF }, // only in SA 2.1
-    { 1,    200,  23, 16   },
-    { 0x12, 400,  26, 0xFF }, // only in SA 2.1
-    { 2,    500,  27, 25   },
-    { 0x12, 600,  28, 0xFF }, // Tramp lies above power levels and always returns 25/100/200/400/600
-    { 3,    800,  29, 40   },
-    { 0x13, 1000, 30, 0xFF }, // only in SA 2.1
-    { 0xFF, 0,    0,  0XFF, PowerActive::Inactive }  // slot reserved for a custom power level
+    // level, mw, dbm, dac, active
+    { 0xFF,  0,    0,  0,    PowerActive::Active   }, // 0mW  -> pitmode (switch pos 0)
+    { 0,    25,   14,  7,    PowerActive::Active   }, // 25mW
+    { 0x11, 100,  20,  0xFF, PowerActive::Inactive }, // only in SA 2.1
+    { 1,    200,  23,  16,   PowerActive::Active   }, // 200mW
+    { 0x12, 400,  26,  0xFF, PowerActive::Inactive }, // only in SA 2.1
+    { 2,    500,  27,  25,   PowerActive::Active   }, // 500mW
+    { 0x12, 600,  28,  0xFF, PowerActive::Inactive }, // Tramp lies above power levels
+    { 3,    800,  29,  40,   PowerActive::Inactive },
+    { 0x13, 1000, 30,  0xFF, PowerActive::Active   }, // 1000mW
+    { 0x14, 1200, 31,  0xFF, PowerActive::Inactive }, // only in SA 2.1
+    { 0x15, 1600, 32,  0xFF, PowerActive::Inactive }, // only in SA 2.1
+    { 0x16, 2000, 33,  0xFF, PowerActive::Inactive }, // only in SA 2.1
+    { 0x17, 2500, 34,  0xFF, PowerActive::Active   }, // 2500mW -> this VTX's hardware max
+    { 0x18, 3000, 35,  0xFF, PowerActive::Inactive }, // above the 2500mW hardware max
+    { 0xFF, 0,    0,   0XFF, PowerActive::Inactive }  // slot reserved for a custom power level
 };
 
 AP_VideoTX::AP_VideoTX()

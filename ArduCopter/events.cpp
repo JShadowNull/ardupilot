@@ -39,6 +39,9 @@ void Copter::failsafe_radio_on_event()
         case FS_THR_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
             break;
+        case FS_THR_ENABLED_LOITER_OR_ALTHOLD:
+            desired_action = FailsafeAction::LOITER_OR_ALTHOLD;
+            break;
         default:
             desired_action = FailsafeAction::LAND;
     }
@@ -189,6 +192,9 @@ void Copter::failsafe_gcs_on_event(void)
             break;
         case FS_GCS_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
+            break;
+        case FS_GCS_ENABLED_LOITER_OR_ALTHOLD:
+            desired_action = FailsafeAction::LOITER_OR_ALTHOLD;
             break;
         default: // if an invalid parameter value is set, the fallback is RTL
             desired_action = FailsafeAction::RTL;
@@ -451,6 +457,29 @@ void Copter::set_mode_brake_or_land_with_pause(ModeReason reason)
     set_mode_land_with_pause(reason);
 }
 
+// set_mode_loiter_or_althold - sets mode to LOITER if a good position estimate
+// is available, otherwise falls back to ALT_HOLD (and LAND as a last resort).
+// Used by the RC and GCS failsafes so the aircraft holds position when GPS is
+// healthy but degrades gracefully to attitude/altitude hold when it is not.
+void Copter::set_mode_loiter_or_althold(ModeReason reason)
+{
+#if MODE_LOITER_ENABLED
+    if (position_ok() && set_mode(Mode::Number::LOITER, reason)) {
+        AP_Notify::events.failsafe_mode_change = 1;
+        return;
+    }
+    gcs().send_text(MAV_SEVERITY_WARNING, "No position, Trying AltHold");
+#endif
+    if (set_mode(Mode::Number::ALT_HOLD, reason)) {
+        AP_Notify::events.failsafe_mode_change = 1;
+        return;
+    }
+
+    // AltHold could not be entered (e.g. no valid altitude) - land as a last resort
+    gcs().send_text(MAV_SEVERITY_WARNING, "Trying Land Mode");
+    set_mode_land_with_pause(reason);
+}
+
 bool Copter::should_disarm_on_failsafe() {
     if (ap.in_arming_delay) {
         return true;
@@ -504,6 +533,9 @@ void Copter::do_failsafe_action(FailsafeAction action, ModeReason reason){
             break;
         case FailsafeAction::BRAKE_LAND:
             set_mode_brake_or_land_with_pause(reason);
+            break;
+        case FailsafeAction::LOITER_OR_ALTHOLD:
+            set_mode_loiter_or_althold(reason);
             break;
     }
 
