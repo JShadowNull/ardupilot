@@ -220,6 +220,7 @@ private:
     AP_OSD_Setting dist{false,22,11};
     AP_OSD_Setting stat{false,0,0};
     AP_OSD_Setting flightime{false, 23, 10};
+    AP_OSD_Setting timerem{false, 23, 11};
     AP_OSD_Setting climbeff{false,0,0};
     AP_OSD_Setting eff{false, 22, 10};
     AP_OSD_Setting atemp;
@@ -322,6 +323,7 @@ private:
     void draw_dist(uint8_t x, uint8_t y);
     void draw_stat(uint8_t x, uint8_t y);
     void draw_flightime(uint8_t x, uint8_t y);
+    void draw_timerem(uint8_t x, uint8_t y);
     void draw_climbeff(uint8_t x, uint8_t y);
     void draw_eff(uint8_t x, uint8_t y);
     void draw_atemp(uint8_t x, uint8_t y);
@@ -585,6 +587,7 @@ public:
     AP_Float warn_avgcellrestvolt;
     AP_Float warn_batvolt;
     AP_Float warn_bat2volt;
+    AP_Int16 warn_timerem;
     AP_Int8 msgtime_s;
     AP_Int8 arm_scr;
     AP_Int8 disarm_scr;

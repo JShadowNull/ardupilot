@@ -1174,6 +1174,22 @@ const AP_Param::GroupInfo AP_OSD_Screen::var_info2[] = {
     AP_GROUPINFO("ESC_IDX", 10, AP_OSD_Screen, esc_index, 0),
 #endif
 
+    // @Param: TIMEREM_EN
+    // @DisplayName: TIMEREM_EN
+    // @Description: Displays estimated battery time remaining as a countdown, based on learned average consumption (see BATT_LRN)
+    // @Values: 0:Disabled,1:Enabled
+
+    // @Param: TIMEREM_X
+    // @DisplayName: TIMEREM_X
+    // @Description: Horizontal position on screen
+    // @Range: 0 59
+
+    // @Param: TIMEREM_Y
+    // @DisplayName: TIMEREM_Y
+    // @Description: Vertical position on screen
+    // @Range: 0 21
+    AP_SUBGROUPINFO(timerem, "TIMEREM", 11, AP_OSD_Screen, AP_OSD_Setting),
+
     AP_GROUPEND
 };
 
@@ -2310,6 +2326,20 @@ void  AP_OSD_Screen::draw_flightime(uint8_t x, uint8_t y)
 }
 
 #if AP_BATTERY_ENABLED
+void AP_OSD_Screen::draw_timerem(uint8_t x, uint8_t y)
+{
+    uint32_t t;
+    if (AP::battery().time_remaining(t)) {
+        t = MIN(t, 5999U); // cap displayed value at 99:59
+        const bool blink = (osd->warn_timerem > 0) && (t <= (uint32_t)osd->warn_timerem.get());
+        backend->write(x, y, blink, "%c%2u:%02u", SYMBOL(SYM_BATT_FULL), unsigned(t/60), unsigned(t%60));
+    } else {
+        backend->write(x, y, false, "%c--:--", SYMBOL(SYM_BATT_FULL));
+    }
+}
+#endif
+
+#if AP_BATTERY_ENABLED
 void AP_OSD_Screen::draw_eff(uint8_t x, uint8_t y)
 {
     AP_BattMonitor &battery = AP::battery();
@@ -2617,6 +2647,9 @@ void AP_OSD_Screen::draw(void)
     DRAW_SETTING(atemp);
     DRAW_SETTING(hdop);
     DRAW_SETTING(flightime);
+#if AP_BATTERY_ENABLED
+    DRAW_SETTING(timerem);
+#endif
 #if AP_RTC_ENABLED
     DRAW_SETTING(clk);
 #endif
