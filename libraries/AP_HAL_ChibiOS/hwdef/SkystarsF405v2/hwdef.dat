@@ -173,3 +173,8 @@ include ../include/minimize_fpv_osd.inc
 # injection over MAVLink (e.g. 4G modem / companion-fed position).
 define AP_GPS_MAV_ENABLED 1
 
+
+# Low-power USB standby: when booted with no main battery (USB power
+# bank only), halt init and listen to CRSF for the wake channel, then
+# drive the battery-connect relay and resume boot. See AP_StandbyPower.
+define AP_STANDBY_POWER_ENABLED 1

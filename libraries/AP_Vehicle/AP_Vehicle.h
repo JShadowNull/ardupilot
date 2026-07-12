@@ -71,6 +71,7 @@
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <Filter/AP_Filter.h>
 #include <AP_Stats/AP_Stats.h>              // statistics library
+#include "AP_StandbyPower.h"
 #if AP_SCRIPTING_ENABLED
 #include <AP_Scripting/AP_Scripting.h>
 #endif
@@ -382,6 +383,10 @@ protected:
 
 #if AP_RELAY_ENABLED
     AP_Relay relay;
+#endif
+
+#if AP_STANDBY_POWER_ENABLED
+    AP_StandbyPower standby_power;
 #endif
 
 #if AP_SERVORELAYEVENTS_ENABLED
