@@ -286,6 +286,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(serial_manager, "SERIAL", 31, AP_Vehicle, AP_SerialManager),
 #endif
 
+#if AP_STANDBY_POWER_ENABLED
+    // @Group: STBY
+    // @Path: AP_StandbyPower.cpp
+    AP_SUBGROUPINFO(standby_power, "STBY", 32, AP_Vehicle, AP_StandbyPower),
+#endif
+
     AP_GROUPEND
 };
 
@@ -322,6 +328,13 @@ void AP_Vehicle::setup()
     // values from storage:
     AP_Param::check_var_info();
     load_parameters();
+
+#if AP_STANDBY_POWER_ENABLED
+    // if enabled and no main battery is present, halt here in a
+    // low-power standby loop until woken via RC. Must run before the
+    // scheduler, sensors, logging and the watchdog are started.
+    standby_power.check();
+#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     if (AP_BoardConfig::get_sdcard_slowdown() != 0) {

@@ -46,6 +46,7 @@ Everything this branch touches, in one place (links are clickable).
 | [`events.cpp`](ArduCopter/events.cpp), [`Copter.h`](ArduCopter/Copter.h), [`defines.h`](ArduCopter/defines.h), [`Parameters.cpp`](ArduCopter/Parameters.cpp) | Loiter-or-AltHold failsafe (action `8`) |
 | [`mode_auto.cpp`](ArduCopter/mode_auto.cpp) | Auto-with-no-mission → Guided |
 | [`config.h`](ArduCopter/config.h), [`AP_MotorsMulticopter.h`](libraries/AP_Motors/AP_MotorsMulticopter.h) | faster arm / spool |
+| [`AP_StandbyPower.cpp`](libraries/AP_Vehicle/AP_StandbyPower.cpp) / [`.h`](libraries/AP_Vehicle/AP_StandbyPower.h), [`AP_Vehicle.cpp`](libraries/AP_Vehicle/AP_Vehicle.cpp) / [`.h`](libraries/AP_Vehicle/AP_Vehicle.h) | low-power USB standby / RC wake (`STBY_*`) |
 | [`minimize_fpv_osd.inc`](libraries/AP_HAL_ChibiOS/hwdef/include/minimize_fpv_osd.inc) | low-flash feature trims the board pulls in |
 
 ## Build configurations
@@ -341,6 +342,55 @@ board pick up the (trimmed) embedded defaults cleanly, then redo accel cal.
 gotcha above, this only reached the firmware once we forced a reconfigure — an
 earlier flash still had the stale `SERVO_BLH_MASK 0`, so passthrough silently
 didn't work until then. See [[ardupilot-defaults-parm-persistence]].
+
+## Low-power USB standby / RC wake (`STBY_*`)
+
+New in this branch: [`AP_StandbyPower`](libraries/AP_Vehicle/AP_StandbyPower.cpp),
+compiled in only for SkystarsF405v2 (`AP_STANDBY_POWER_ENABLED` in `hwdef.dat`).
+
+The use case: the drone sits with the main battery **disconnected**, FC + RX
+powered from a detachable USB-C power bank. A MOSFET device connects the main
+battery when its gate is driven to 3.3 V by Relay 1 (pin 54 / PB6). The bank
+detaches at liftoff.
+
+With `STBY_EN=1`, if the FC boots and sees **no main battery** (PC0 ADC) and
+**no USB host**, it halts initialisation immediately after parameter load —
+before sensors, OSD, logging, the scheduler and the watchdog — and sits in a
+minimal loop parsing CRSF straight off SERIAL2. The MCU idles in WFI between
+frames; the only activity is the RC listen and a short LED blink every 2 s.
+The AT7456E OSD chip is also put in its lowest-power state (software reset +
+video buffer disable over SPI) — `AP_OSD_MAX7456::init()` fully reconfigures
+it when boot resumes, so there's nothing to undo.
+
+Wake sequence:
+
+1. Wake channel (`STBY_CHAN`, default 7 — same channel that drives Relay 1 via
+   `RC7_OPTION=28`) held above `STBY_TRIG` (default 1800) for 0.5 s of fresh,
+   CRC-valid frames.
+2. Relay 1's pin is driven high → battery connects.
+3. Once PC0 confirms battery voltage (`STBY_BATT_V`, default 7 V), normal boot
+   **continues in place** — no reset, so the gate never glitches. If the
+   battery doesn't appear within 10 s (or the switch is released), the pin is
+   released and it re-arms.
+
+Escape hatches — both resume a completely normal boot:
+
+- battery already present at power-up (normal field use)
+- a USB **host** enumerates (bench configuration; a dumb power bank never
+  enumerates)
+
+Params (all under `STBY_`): `_EN`, `_CHAN`, `_TRIG`, `_RELAY` (relay instance,
+1-based), `_UART` (serial port carrying CRSF, default 2), `_BATT_V`.
+
+Two coupled changes to be aware of:
+
+- `RELAY1_DEFAULT` moved `0 → 2` (**no change**) in `defaults.parm`. Relay init
+  must not slam the pin low after the standby code set it high. Side effect: on
+  a normal boot the pin is left floating instead of driven low — the MOSFET
+  device's gate pulldown keeps it off, same net behaviour as before.
+- Firmware **cannot** protect against an in-flight FC reboot: during MCU reset
+  the pin goes hi-Z and main power drops. That hazard predates this feature —
+  it's inherent to gating the battery through an FC pin.
 
 ## Behaviour tweaks
 
