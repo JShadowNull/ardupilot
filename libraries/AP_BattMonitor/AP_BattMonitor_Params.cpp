@@ -169,6 +169,21 @@ const AP_Param::GroupInfo AP_BattMonitor_Params::var_info[] = {
     AP_GROUPINFO("ESC_INDEX", 22, AP_BattMonitor_Params, _esc_telem_outbound_index, 0),
 #endif
 
+    // @Param: LRN
+    // @DisplayName: Battery consumption learning
+    // @Description: Enables learning of the average in-flight current draw, used together with _CAPACITY to estimate remaining flight time. At disarm, the average current of any flight longer than 60 seconds is blended into _LRN_AMPS. Learn updates the value for this boot only, LearnAndSave persists it across reboots (same scheme as MOT_HOVER_LEARN).
+    // @Values: 0:Disabled,1:Learn,2:LearnAndSave
+    // @User: Advanced
+    AP_GROUPINFO("LRN", 23, AP_BattMonitor_Params, _consumption_learn, 0),
+
+    // @Param: LRN_AMPS
+    // @DisplayName: Learned average flight current
+    // @Description: Average in-flight current draw learned from previous flights, used to estimate remaining flight time. Automatically updated at disarm when _LRN is enabled, or can be set manually from log data. Set to 0 to reset the learned value.
+    // @Units: A
+    // @Range: 0 500
+    // @User: Advanced
+    AP_GROUPINFO("LRN_AMPS", 24, AP_BattMonitor_Params, _learned_avg_amps, 0),
+
     AP_GROUPEND
 
 };

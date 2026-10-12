@@ -180,6 +180,10 @@ define HAL_OS_FATFS_IO 1
 # external compass types
 define ALLOW_ARM_NO_COMPASS
 define HAL_PROBE_EXTERNAL_I2C_COMPASSES
+# Include the IIS2MDC/LIS2MDL driver for the MR2 compass.
+define AP_COMPASS_IIS2MDC_ENABLED 1
+# MR2: remove the post-arm delay; motor ramp is set by MOT_SPOOL_TIME.
+define ARMING_DELAY_SEC 0.0f
 define HAL_I2C_INTERNAL_MASK 0
 define HAL_COMPASS_AUTO_ROT_DEFAULT 2
 define HAL_DEFAULT_INS_FAST_SAMPLE 3

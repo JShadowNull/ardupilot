@@ -10718,10 +10718,96 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
 
         self.progress("Sprayer OK")
 
+    def MR2Failsafe(self):
+        """Custom RC/GCS action holds position, or altitude without position."""
+        self.set_parameters({"FS_THR_ENABLE": 8, "FS_GCS_ENABLE": 0,
+                             "FS_OPTIONS": 0, "SYSID_MYGCS": self.mav.source_system})
+        self.takeoff(alt_min=10, mode="GUIDED")
+        self.set_parameter("SIM_RC_FAIL", 1)
+        self.wait_mode("LOITER")
+        self.set_parameter("SIM_RC_FAIL", 0)
+        self.delay_sim_time(5)
+        self.change_mode("ALT_HOLD")
+        self.setGCSfailsafe(8)
+        try:
+            self.set_heartbeat_rate(0)
+            self.wait_mode("LOITER")
+        finally:
+            self.set_heartbeat_rate(self.speedup)
+        self.setGCSfailsafe(0)
+        self.delay_sim_time(5)
+        self.land_and_disarm()
+
+        self.set_parameters({"GPS1_TYPE": 0, "EK3_SRC1_POSXY": 0,
+                             "EK3_SRC1_VELXY": 0, "FS_GCS_ENABLE": 0,
+                             "SIM_SPEEDUP": 4})
+        self.reboot_sitl()
+        # This scenario deliberately has no horizontal aiding. The standard
+        # ready-to-arm helper requires relative position even with
+        # require_absolute=False, so wait only for the needed estimates.
+        self.change_mode("ALT_HOLD")
+        self.wait_ekf_flags(mavutil.mavlink.ESTIMATOR_ATTITUDE |
+                            mavutil.mavlink.ESTIMATOR_VELOCITY_VERT |
+                            mavutil.mavlink.ESTIMATOR_POS_VERT_ABS, 0)
+        self.wait_prearm_sys_status_healthy()
+        self.zero_throttle()
+        self.arm_vehicle()
+        self.set_rc(3, 1700)
+        self.wait_altitude(9, 15, relative=True)
+        self.hover()
+        self.change_mode("STABILIZE")
+        self.set_parameter("SIM_RC_FAIL", 1)
+        self.wait_mode("ALT_HOLD")
+        self.set_parameter("SIM_RC_FAIL", 0)
+        self.delay_sim_time(5)
+        self.land_and_disarm()
+
+    def MR2Auto(self):
+        """Empty Auto redirects; completed missions clear and keep holding."""
+        self.wait_ready_to_arm()
+        self.clear_mission(mavutil.mavlink.MAV_MISSION_TYPE_MISSION)
+        self.send_cmd_do_set_mode("AUTO")
+        self.wait_mode("GUIDED")
+        self.change_mode("STABILIZE")
+        self.upload_simple_relhome_mission([
+            (mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 10),
+        ])
+        self.set_parameter("AUTO_OPTIONS", 3)
+        self.context_collect("STATUSTEXT")
+        self.change_mode("AUTO")
+        self.arm_vehicle()
+        self.wait_statustext("Auto: Mission cleared", timeout=120, check_context=True)
+        self.assert_mission_count(0)
+        self.delay_sim_time(5)
+        self.wait_mode("AUTO")
+        self.land_and_disarm()
+
+    def MR2BatteryTime(self):
+        """Check capacity/reserve arithmetic and persistent consumption learning."""
+        self.set_parameters({"BATT_CAPACITY": 3300, "BATT_LOW_MAH": 600,
+                             "BATT_LRN_AMPS": 10, "BATT_LRN": 2})
+        self.delay_sim_time(2)
+        m = self.assert_receive_message("BATTERY_STATUS")
+        expected = max(0, (2700 - m.current_consumed) * 3.6 / 10)
+        if abs(m.time_remaining - expected) > 2:
+            raise NotAchievedException("Battery estimate %s, expected %s" %
+                                       (m.time_remaining, expected))
+        self.takeoff(alt_min=10, mode="GUIDED")
+        self.delay_sim_time(65)
+        self.land_and_disarm()
+        learned = self.get_parameter("BATT_LRN_AMPS")
+        if abs(learned - 10) < 0.1:
+            raise NotAchievedException("Battery consumption did not learn")
+        self.reboot_sitl()
+        self.assert_parameter_values({"BATT_LRN_AMPS": learned})
+
     def tests1a(self):
         '''return list of all tests'''
         ret = super(AutoTestCopter, self).tests()  # about 5 mins and ~20 initial tests from autotest/vehicle_test_suite.py
         ret.extend([
+             self.MR2Failsafe,
+             self.MR2Auto,
+             self.MR2BatteryTime,
              self.NavDelayTakeoffAbsTime,
              self.NavDelayAbsTime,
              self.NavDelay,
