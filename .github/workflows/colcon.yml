@@ -138,7 +138,7 @@ concurrency:
 
 jobs:
   build-test:
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, ubuntu-22.04]
     container:
       image: ardupilot/ardupilot-dev-ros:latest
     strategy:
